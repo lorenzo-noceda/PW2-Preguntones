@@ -7,7 +7,11 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /PW2-Preguntones/
-#    RewriteBase /
+
+    # Redirigir exactamente /index.php o cualquier ruta que lo contenga
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+PW2-Preguntones/index\.php [NC]
+    RewriteRule ^index\.php$ /PW2-Preguntones/home [R=301,L]
+
     RewriteRule ^(public)($|/) - [L,NC]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
