@@ -43,9 +43,7 @@ class Database
             $response = ["success" => $success];
             if ($success && in_array($mode, ['SINGLE', 'MULTIPLE'])) {
                 // Obtiene los resultados según el modo solicitado
-                $response['data'] =
-                    ($mode === "SINGLE") ?
-                        $this->stmt->fetch(PDO::FETCH_ASSOC) : $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+                $response['data'] = ($mode === "SINGLE") ? $this->stmt->fetch(PDO::FETCH_ASSOC) : $this->stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             return $response;
@@ -69,5 +67,5 @@ class Database
         $this->cerrarConexion();
     }
 }
-
 ?>
+
