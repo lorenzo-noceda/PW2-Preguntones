@@ -134,26 +134,24 @@ class Database
 
 class Database
 {
-    private $conexion;
-    private $stmt = null;
+    private $conexion; // Propiedad para la conexión
+    private $stmt = null; // Propiedad para la sentencia, inicializada en null
 
-    public function __construct($host, $username, $password, $database)
+    public function __construct(string $host, string $username, string $password, string $database)
     {
         $this->iniciarConexion($host, $username, $password, $database);
     }
 
-    private function iniciarConexion($host, $username, $password, $database): void
+    private function iniciarConexion(string $host, string $username, string $password, string $database): void
     {
-        if ($this->conexion === null) {
-            $dsn = "mysql:host={$host};dbname={$database}";
-            try {
-                $this->conexion = new PDO($dsn, $username, $password, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                ]);
-            } catch (PDOException $e) {
-                throw new Exception("Error en la conexión: " . $e->getMessage());
-            }
+        $dsn = "mysql:host={$host};dbname={$database};charset=utf8mb4";
+        try {
+            $this->conexion = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Error en la conexión: " . $e->getMessage());
         }
     }
 
@@ -170,7 +168,7 @@ class Database
 
             $response = ["success" => $success];
             if ($success && in_array($mode, ['SINGLE', 'MULTIPLE'])) {
-                $response['data'] = ($mode === "SINGLE") ? $this->stmt->fetch() : $this->stmt->fetchAll();
+                $response['data'] = ($mode === "SINGLE") ? $this->stmt->fetch(PDO::FETCH_ASSOC) : $this->stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             return $response;
@@ -181,11 +179,16 @@ class Database
 
     private function ejecutarConsulta(): bool
     {
-        return $this->stmt ? $this->stmt->execute() : false;
+        return $this->stmt ? $this->stmt->execute() : false; // Verifica si $stmt está inicializado
+    }
+
+    public function cerrarConexion(): void
+    {
+        $this->conexion = null; // Cierra la conexión
     }
 
     public function __destruct()
     {
-        $this->conexion = null; // Cierra la conexión al destruir la clase
+        $this->cerrarConexion(); // Cierra la conexión al destruir la clase
     }
 }
