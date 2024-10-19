@@ -12,6 +12,11 @@ class MysqlObjectDatabase
         return  $result->fetch_all( MYSQLI_ASSOC );
     }
 
+    public function execute($sql){
+        $this->conn->query($sql);
+        return $this->conn->affected_rows;
+    }
+
     public function __destruct()
     {
         $this->conn->close();
