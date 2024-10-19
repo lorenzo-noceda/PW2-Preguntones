@@ -122,3 +122,70 @@ class Database
 
 
 ?>
+
+
+
+
+
+
+
+
+<?php
+
+class Database
+{
+    private $conexion;
+    private $stmt = null;
+
+    public function __construct($host, $username, $password, $database)
+    {
+        $this->iniciarConexion($host, $username, $password, $database);
+    }
+
+    private function iniciarConexion($host, $username, $password, $database): void
+    {
+        if ($this->conexion === null) {
+            $dsn = "mysql:host={$host};dbname={$database}";
+            try {
+                $this->conexion = new PDO($dsn, $username, $password, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                ]);
+            } catch (PDOException $e) {
+                throw new Exception("Error en la conexión: " . $e->getMessage());
+            }
+        }
+    }
+
+    public function query(string $query, string $mode, array $params = []): array
+    {
+        try {
+            $this->stmt = $this->conexion->prepare($query);
+
+            foreach ($params as $columna => $valor) {
+                $this->stmt->bindValue(":{$columna}", $valor);
+            }
+
+            $success = $this->ejecutarConsulta();
+
+            $response = ["success" => $success];
+            if ($success && in_array($mode, ['SINGLE', 'MULTIPLE'])) {
+                $response['data'] = ($mode === "SINGLE") ? $this->stmt->fetch() : $this->stmt->fetchAll();
+            }
+
+            return $response;
+        } catch (PDOException $e) {
+            throw new Exception("Error en la ejecución de la consulta: " . $e->getMessage());
+        }
+    }
+
+    private function ejecutarConsulta(): bool
+    {
+        return $this->stmt ? $this->stmt->execute() : false;
+    }
+
+    public function __destruct()
+    {
+        $this->conexion = null; // Cierra la conexión al destruir la clase
+    }
+}
