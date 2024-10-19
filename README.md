@@ -134,15 +134,15 @@ class Database
 
 class Database
 {
-    private $conexion; // Propiedad para la conexión
-    private $stmt = null; // Propiedad para la sentencia, inicializada en null
+    private $conexion;
+    private $stmt = null;
 
-    public function __construct(string $host, string $username, string $password, string $database)
+    public function __construct($host, $username, $password, $database)
     {
         $this->iniciarConexion($host, $username, $password, $database);
     }
 
-    private function iniciarConexion(string $host, string $username, string $password, string $database): void
+    private function iniciarConexion($host, $username, $password, $database)
     {
         $dsn = "mysql:host={$host};dbname={$database};charset=utf8mb4";
         try {
@@ -155,19 +155,21 @@ class Database
         }
     }
 
-    public function query(string $query, string $mode, array $params = []): array
+    public function query($query, $mode, $params = [])
     {
         try {
-            $this->stmt = $this->conexion->prepare($query);
+            $this->stmt = $this->conexion->prepare($query); // Prepara la consulta
 
+            // Vincula los parámetros a la consulta
             foreach ($params as $columna => $valor) {
                 $this->stmt->bindValue(":{$columna}", $valor);
             }
 
-            $success = $this->ejecutarConsulta();
+            $success = $this->ejecutarConsulta(); // Ejecuta la consulta
 
             $response = ["success" => $success];
             if ($success && in_array($mode, ['SINGLE', 'MULTIPLE'])) {
+                // Obtiene los resultados según el modo solicitado
                 $response['data'] = ($mode === "SINGLE") ? $this->stmt->fetch(PDO::FETCH_ASSOC) : $this->stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
@@ -177,18 +179,18 @@ class Database
         }
     }
 
-    private function ejecutarConsulta(): bool
+    private function ejecutarConsulta()
     {
-        return $this->stmt ? $this->stmt->execute() : false; // Verifica si $stmt está inicializado
+        return $this->stmt ? $this->stmt->execute() : false;
     }
 
-    public function cerrarConexion(): void
+    public function cerrarConexion()
     {
-        $this->conexion = null; // Cierra la conexión
+        $this->conexion = null;
     }
 
     public function __destruct()
     {
-        $this->cerrarConexion(); // Cierra la conexión al destruir la clase
+        $this->cerrarConexion();
     }
 }
