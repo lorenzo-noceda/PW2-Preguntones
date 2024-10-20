@@ -22,7 +22,6 @@ class LoginController
             $pass = $_POST['password'];
 
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
-
             echo "POST";
             var_dump($usuario);
 
