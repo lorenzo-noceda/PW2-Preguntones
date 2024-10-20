@@ -31,5 +31,19 @@ class UsuarioModel
             // Manejar que pasa si llega null
         }
     }
+    public function getUsuariosPorUsername($username) {
+        $query = 'SELECT * FROM usuario WHERE username = :username';
+        $params = [
+            ["columna" => "username", "valor" => $username],
+        ];
+        $result = $this->database->query($query, "SINGLE", $params);
+
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        else{
+            return null;
+        }
+    }
 
 }
