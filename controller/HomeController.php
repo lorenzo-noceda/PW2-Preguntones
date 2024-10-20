@@ -15,4 +15,18 @@ class HomeController
     public function list() {
         $this->presenter->show("home", []);
     }
+
+    public function perfil() {
+        $id = $_GET["id"] ?? null;
+        $data["usuario"] = $this->model->getUsuarioPorId($id);
+        $this->presenter->show("perfil", $data);
+    }
+
+    public function login() {
+        echo "Login";
+    }
+
+    public function registro() {
+        echo "Login";
+    }
 }
