@@ -3,13 +3,54 @@
 class UsuarioModel
 {
     private $database;
+//    const string ERROR_REGISTRO_USUARIO = 'No se pudo registrar al usuario';
+//    const string ERROR_REGISTRO_JUGADOR = 'No se pudo registrar al jugador';
+//    const string SUCCESS_REGISTRO = 'Jugador registrado correctamente';
 
     public function __construct($database)
     {
         $this->database = $database;
     }
 
-    public function getUsuarioPorId($id) {
+    public function registrarUsuario($usuario)
+    {
+        $usuario['password'] = password_hash($usuario['password'], PASSWORD_DEFAULT);
+        return $this->guardarUsuario($usuario);
+    }
+
+    private function guardarUsuario($usuario)
+    {
+        $query = "
+                INSERT INTO usuario
+                    (nombre, apellido, username, email, password, anio_nacimiento, id_sexo, id_ciudad)
+                VALUES 
+                    (:nombre, :apellido, :username, :email, :password, :anio_nacimiento, :id_sexo, :id_ciudad)";
+        $params = [
+            ["columna" => "nombre", "valor" => $usuario['nombre']],
+            ["columna" => "apellido", "valor" => $usuario['apellido']],
+            ["columna" => "username", "valor" => $usuario['username']],
+            ["columna" => "email", "valor" => $usuario['email']],
+            ["columna" => "password", "valor" => $usuario['password']],
+            ["columna" => "anio_nacimiento", "valor" => $usuario['anio_nacimiento']],
+            ["columna" => "id_sexo", "valor" => $usuario['id_sexo']],
+            ["columna" => "id_ciudad", "valor" => $usuario['id_ciudad']],
+            ["columna" => "anio_nacimiento", "valor" => $usuario['nombre']],
+        ];
+
+        return $this->database->query($query, 'INSERT', $params);
+    }
+
+    private function insertarJugador($idUsuario)
+    {
+        $query = 'INSERT INTO jugador(id) VALUES(:id)';
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        return $this->database->query($query, '', $params);
+    }
+
+    public function getUsuarioPorId($id)
+    {
         if ($id != null) {
             $q = "
             SELECT u.*, c.nombre AS ciudad, p.nombre AS pais 
@@ -31,17 +72,17 @@ class UsuarioModel
             // Manejar que pasa si llega null
         }
     }
-    public function getUsuariosPorUsername($username) {
+
+    public function getUsuarioPorUsername($username)
+    {
         $query = 'SELECT * FROM usuario WHERE username = :username';
         $params = [
             ["columna" => "username", "valor" => $username],
         ];
         $result = $this->database->query($query, "SINGLE", $params);
-
         if ($result["success"]) {
             return $result["data"];
-        }
-        else{
+        } else {
             return null;
         }
     }

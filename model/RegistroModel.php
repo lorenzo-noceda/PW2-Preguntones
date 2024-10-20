@@ -17,6 +17,7 @@ class RegistroModel
         return $this->insertarUsuario($usuario);
     }
 
+    // ?
     public function registrarJugador($usuario){
         return $this->insertarUsuario($usuario);
     }
