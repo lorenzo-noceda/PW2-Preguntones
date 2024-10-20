@@ -8,6 +8,8 @@ include_once(__DIR__ . "/../helper/Database.php");
 // Controllers
 include_once(__DIR__ . "/../controller/UsuarioController.php");
 include_once(__DIR__ . "/../controller/HomeController.php");
+include_once(__DIR__ . "/../controller/RegistroController.php");
+include_once(__DIR__ . "/../controller/LoginController.php");
 
 // Models
 include_once(__DIR__ . "/../model/UsuarioModel.php");
@@ -27,6 +29,13 @@ class Configuration
     public function getHomeController(){
         return new HomeController($this->getUsuarioModel(), $this->getPresenter());
     }
+    public function getRegistroController(){
+        return new RegistroController($this->getUsuarioModel(), $this->getPresenter());
+    }
+    public function getLoginController(){
+        return new LoginController($this->getUsuarioModel(), $this->getPresenter());
+    }
+
 
 
 

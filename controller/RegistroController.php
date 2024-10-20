@@ -2,12 +2,19 @@
 
 class RegistroController
 {
- private $registroModel;
+ private $usuarioModel;
+ private $presenter;
 
- public function __construct($registroModel){
-     $this->registroModel = $registroModel;
+ public function __construct($usuarioModel, $presenter){
+     $this->usuarioModel = $usuarioModel;
+     $this->presenter = $presenter;
  }
 
+ public function list () {
+     $this->presenter->show("registro", []);
+ }
+
+ // Registrar
  public function registrar(){
      if($_SERVER['REQUEST_METHOD'] === 'POST'){
         $usuario = [
@@ -25,7 +32,7 @@ class RegistroController
 
         if(!$resultadoUsuario['success']){
             $error = RegistroModel::ERROR_REGISTRO_USUARIO;
-            require 'view/registro.mustache';
+            require 'view/registroView.mustache';
             return;
         }
 
@@ -35,14 +42,14 @@ class RegistroController
 
         if(!$resultadoJugador['success']){
             $error = RegistroModel::ERROR_REGISTRO_JUGADOR;
-            require 'view/registro.mustache';
+            require 'view/registroView.mustache';
             return;
         }
 
         $success = RegistroModel::SUCCESS_REGISTRO;
         require 'view/registro.success.mustache';
      }else{
-         require 'view/registro.mustache';
+         require 'view/registroView.mustache';
      }
  }
 }
