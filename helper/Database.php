@@ -52,6 +52,11 @@ class Database
         return $this->stmt ? $this->stmt->execute() : false;
     }
 
+    public function getUltimoIdGenerado()
+    {
+        return $this->conexion->lastInsertId();
+    }
+
     public function cerrarConexion()
     {
         $this->conexion = null;
