@@ -5,13 +5,23 @@ class RegistroController
  private $usuarioModel;
  private $presenter;
 
- public function __construct($usuarioModel, $presenter){
+ private $paisesModel;
+
+ public function __construct($usuarioModel, $presenter, $paisesModel){
      $this->usuarioModel = $usuarioModel;
      $this->presenter = $presenter;
+     $this->paisesModel = $paisesModel;
  }
 
  public function list () {
-     $this->presenter->show("registro", []);
+     $data = [
+         'formTitle' => 'Registro de Usuario',
+         'formAction' => '/PW2-Preguntones/registro/registrar',
+         'submitButtonText' => 'Registrar',
+         'loginLink' => 'view/login',
+         'paises'  => $this->paisesModel->getPaises()
+     ];
+     $this->presenter->show("registro", $data);
  }
 
  // Registrar
@@ -50,6 +60,14 @@ class RegistroController
         require 'view/registro.success.mustache';
      }else{
          require 'view/registroView.mustache';
+
      }
+ }
+
+ public  function getCiudades(){
+
+     $id=$_GET["id"];
+     $variablesCiudades=$this->paisesModel->getCiudades($id);
+     echo json_encode($variablesCiudades);
  }
 }
