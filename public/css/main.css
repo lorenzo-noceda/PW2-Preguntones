@@ -1,0 +1,45 @@
+/* ESTILOS GENERALES */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    text-decoration: none;
+    list-style: none;
+}
+
+
+/* HELPERS */
+.bor1 {
+    border: 5px solid red;
+}
+.bor2 {
+    border: 5px solid green;
+}
+.bor3 {
+    border: 5px solid blue;
+}
+
+/* NAVBAR */
+
+.hambugerContainer {
+    width: 35px;
+}
+
+.hambugerContainer img {
+    width: 100%;
+}
+
+.styledHeader {
+    height: 80px;
+}
+.styledHeader nav {
+    height: 100%;
+}
+
+.userImageContainer {
+    width: 50px;
+}
+
+.userImageContainer img {
+    width: 100%;
+}
