@@ -13,6 +13,7 @@ include_once(__DIR__ . "/../controller/LoginController.php");
 
 // Models
 include_once(__DIR__ . "/../model/UsuarioModel.php");
+include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
 
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
 
@@ -30,7 +31,7 @@ class Configuration
         return new HomeController($this->getUsuarioModel(), $this->getPresenter());
     }
     public function getRegistroController(){
-        return new RegistroController($this->getUsuarioModel(), $this->getPresenter());
+        return new RegistroController($this->getUsuarioModel(), $this->getPresenter(), $this->getPaisYCiudadModel());
     }
     public function getLoginController(){
         return new LoginController($this->getUsuarioModel(), $this->getPresenter());
@@ -43,6 +44,11 @@ class Configuration
     private function getUsuarioModel()
     {
         return new UsuarioModel($this->getDatabase());
+    }
+
+    private function getPaisYCiudadModel()
+    {
+        return new PaisYCiudadModel($this->getDatabase());
     }
 
     // Helpers
