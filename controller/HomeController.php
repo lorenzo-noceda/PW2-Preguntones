@@ -12,21 +12,35 @@ class HomeController
         $this->presenter = $presenter;
     }
 
-    public function list() {
-        $this->presenter->show("home", []);
+    public function list(): void
+    {
+        $usuarioActual = $_SESSION["usuario"] ?? null;
+        if (!$usuarioActual["verificado"]) {
+            $data = [
+                "mensaje" => "Verifica tu correo por favor.",
+                "correo" => $usuarioActual["email"],
+                "id_usuario" => $usuarioActual["id"]
+            ];
+            $this->presenter->show("validacionCorreo", $data);
+        } else {
+            $this->presenter->show("home", []);
+        }
     }
 
-    public function perfil() {
+    public function perfil()
+    {
         $id = $_GET["id"] ?? null;
         $data["usuario"] = $this->model->getUsuarioPorId($id);
         $this->presenter->show("perfil", $data);
     }
 
-    public function login() {
+    public function login()
+    {
         echo "Login";
     }
 
-    public function registro() {
+    public function registro()
+    {
         echo "Login";
     }
 }

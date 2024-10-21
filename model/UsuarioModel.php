@@ -12,8 +12,51 @@ class UsuarioModel
         $this->database = $database;
     }
 
-    public function registrarJugador($usuario){
-        return $this->guardarUsuario($usuario);
+    public function guardarJugador(){
+        $id = $this->getUltimoIdGenerado();
+        $query = "
+                INSERT INTO jugador
+                    (id, verificado)
+                VALUES 
+                    (:id, :verificado)";
+        $params = [
+            ["columna" => "id", "valor" => $id],
+            ["columna" => "verificado", "valor" => false],
+        ];
+        return $this->database->query($query, 'INSERT', $params);
+    }
+
+    public function getVerificacionDeUsuario ($idusuario) {
+        if ($idusuario != null) {
+            $q = "
+            SELECT verificado 
+            FROM jugador
+            WHERE id = :id";
+            $params = [
+                ["columna" => "id", "valor" => $idusuario],
+            ];
+            $result = $this->database->query($q, "SINGLE", $params);
+            if ($result["success"]) {
+                return $result["data"];
+            } else {
+                return [];
+            }
+        } else {
+            return [];
+            // Manejar que pasa si llega null
+        }
+    }
+
+    public function validarJugador ($id) {
+        $query = "
+                UPDATE jugador
+                SET verificado = :verificado
+                WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $id],
+            ["columna" => "verificado", "valor" => true],
+        ];
+        return $this->database->query($query, 'UPDATE', $params);
     }
 
     public function getUltimoIdGenerado(){
@@ -64,7 +107,7 @@ class UsuarioModel
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
-        return $this->database->query($query, '', $params);
+        return $this->database->query($query, 'INSERT', $params);
     }
 
     public function getUsuarioPorId($id)
