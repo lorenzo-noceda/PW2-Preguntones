@@ -17,7 +17,7 @@ class LoginController
             'formTitle' => 'Iniciar sesión',
             'formAction' => '/PW2-Preguntones/login/validar',
             'submitButtonText' => 'Ingresar',
-            "mensaje" => $_SESSION["success"],
+            "mensaje" => $_SESSION["success"]?? null,
             "error" => $_SESSION["error"] ?? null,
         ];
         unset($_SESSION["error"]);
