@@ -1,5 +1,7 @@
 <?php
 
+use JetBrains\PhpStorm\NoReturn;
+
 class LoginController
 {
     private $usuarioModelo;
@@ -24,17 +26,24 @@ class LoginController
         $this->presenter->show("login", $data);
     }
 
-    public function validar()
+    public function validar(): void
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $user = $_POST['username'];
             $pass = $_POST['password'];
 
+            // Obtener usuario de la DB
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
             if ($usuario && password_verify($pass, $usuario['password'])) {
+                // Buscamos si esta verificado
+                $usuario["verificado"] =
+                    $this->usuarioModelo->getVerificacionDeUsuario($usuario["id"])["verificado"];
+                // Guardamos usuario en sesión
                 $_SESSION['usuario'] = $usuario;
+                // A casita perro
                 $this->redireccionar("home");
             } else {
+                // No se encontró usuario
                 $_SESSION["error"] = "Credenciales incorrectas";
                 $this->redireccionar("login");
             }
@@ -48,7 +57,7 @@ class LoginController
      * @param $ruta
      * @return void
      */
-    private function redireccionar($ruta)
+    #[NoReturn] private function redireccionar($ruta): void
     {
         header("Location: /PW2-preguntones/$ruta");
         exit();
