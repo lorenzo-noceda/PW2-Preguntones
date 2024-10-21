@@ -9,6 +9,9 @@
 <body>
 <div class="form-container">
     <h1>{{formTitle}}</h1>
+    {{#error}}
+        <h3>{{error}}</h3>
+    {{/error}}
     <form action="{{formAction}}" method="POST">
         <div class="form-group">
             <label for="email">Dirección de correo</label>
@@ -30,19 +33,27 @@
             <label for="username">Nombre de usuario</label>
             <input type="text" id="username" name="username" placeholder="Pregunton01" required>
         </div>
+        <!--   PAIS Y CIUDAD     -->
         <div class="form-group">
             <label for="location">País y ciudad</label>
-            <select id="pais" name="pais" >
+            <select id="pais" name="pais">
                 <option value="">Selecciona un país</option>
                 {{#paises}}
                     <option value="{{id}}">{{nombre}}</option>
                 {{/paises}}
-
             </select>
-            <select id="ciudad" name="ciudad">
+            <select id="ciudad" name="id_ciudad">
                 <option value="">Selecciona una ciudad</option>
             </select>
-
+        </div>
+        <!--  SEXO  UwU    -->
+        <div>
+            <label for="sexo">Sexo</label>
+            <select id="sexo" name="id_sexo">
+                {{#sexo}}
+                    <option value="{{id}}">{{nombre}}</option>
+                {{/sexo}}
+            </select>
         </div>
         <div class="form-group">
             <label for="password">Contraseña</label>
@@ -59,7 +70,8 @@
         <button type="submit">{{submitButtonText}}</button>
     </form>
     <div class="terms">
-        Al crear su cuenta, acepta nuestros <a href="{{termsLink}}">Términos de servicio</a> y <a href="{{privacyLink}}">Política</a>
+        Al crear su cuenta, acepta nuestros <a href="{{termsLink}}">Términos de servicio</a> y <a
+            href="{{privacyLink}}">Política</a>
     </div>
     <div class="login-link">
         ¿Ya tienes una cuenta? <a href="{{loginLink}}">Inicia sesión aquí</a>
