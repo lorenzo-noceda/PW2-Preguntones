@@ -19,7 +19,7 @@ class LoginController
             'formTitle' => 'Iniciar sesión',
             'formAction' => '/PW2-Preguntones/login/validar',
             'submitButtonText' => 'Ingresar',
-            "mensaje" => $_SESSION["success"],
+            "mensaje" => $_SESSION["success"] ?? null,
             "error" => $_SESSION["error"] ?? null,
         ];
         unset($_SESSION["error"]);
@@ -34,10 +34,9 @@ class LoginController
 
             // Obtener usuario de la DB
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
-            if ($usuario && password_verify($pass, $usuario['password'])) {
-                // Buscamos si esta verificado
-                $usuario["verificado"] =
-                    $this->usuarioModelo->getVerificacionDeUsuario($usuario["id"])["verificado"];
+
+            //password_verify($pass, $usuario['password']) usar en segundo if cuando este hasheadas todas
+            if ($usuario != null && ($usuario["password"] == $pass)) {
                 // Guardamos usuario en sesión
                 $_SESSION['usuario'] = $usuario;
                 // A casita perro

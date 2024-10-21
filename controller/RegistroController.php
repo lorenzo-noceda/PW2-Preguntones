@@ -16,14 +16,16 @@ class RegistroController
 
     public function list()
     {
+        $_SESSION["paises"] = $this->paisesModel->getPaises();
+        $_SESSION["sexo"] = $this->usuarioModel->getSexos();
+
         $data = [
-            'formTitle' => 'Registro de Usuario',
-            'formAction' => '/PW2-Preguntones/registro/registrar',
-            'submitButtonText' => 'Registrar',
-            'loginLink' => 'view/login',
-            'paises' => $this->paisesModel->getPaises(),
-            "sexo" => $this->usuarioModel->getSexos(),
+            'paises' => $_SESSION["paises"],
+            "sexo" => $_SESSION["sexo"],
+            "error" => $_SESSION["error"] ?? null,
         ];
+
+        unset($_SESSION["error"]);
         $this->presenter->show("registro", $data);
     }
 
@@ -35,14 +37,24 @@ class RegistroController
             // Obtener información del formulario
             $usuario = $this->obtenerDatosDelUsuario();
 
+            // Validar campos (contraseñas, correo y username)
+            $result = $this->usuarioModel->verificarCampos($usuario);
+
+            var_dump($result);
+
+            // Manejar error de validación
+            if (!$result["success"]) {
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
+            }
+
             // Registrar usuario
             $resultadoUsuario = $this->usuarioModel->registrarUsuario($usuario);
 
-            // Manejar error
+            // Manejar error de registro
             if (!$resultadoUsuario['success']) {
-                $data["error"] = "Algo salio mal.";
-                $this->presenter->show("registro", $data["error"]);
-                return;
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
             }
 
             // Guardamos jugador
@@ -52,9 +64,11 @@ class RegistroController
             if ($result["success"]) {
                 $_SESSION["correoParaValidar"] = $usuario['email'];
                 $_SESSION["usuario"] = $usuario;
+                $_SESSION["id_usuario"] = $resultadoUsuario["lastId"];
                 $this->redireccionar("registro/validarCorreo");
             } else {
-                $this->presenter->show("error", []);
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
             }
         } else $this->redireccionar("registro");
     }
@@ -75,7 +89,7 @@ class RegistroController
     public function validarCorreo()
     {
         $data = [
-            "correoParaValidar" => $_SESSION["correoParaValidar"],
+            "correoParaValidar" => $_SESSION["correoParaValidar"] ?? "nada crack.",
             "id_usuario" => $_SESSION["id_usuario"],
         ];
         $this->presenter->show("validacionCorreo", $data);
@@ -99,7 +113,8 @@ class RegistroController
             'password' => $_POST['password'],
             'anio_nacimiento' => $_POST['anio_nacimiento'],
             'id_sexo' => $_POST['id_sexo'],
-            'id_ciudad' => $_POST['id_ciudad']
+            'id_ciudad' => $_POST['id_ciudad'],
+            "confirmPassword" => $_POST['confirmPassword'],
         ];
     }
 

@@ -15,32 +15,46 @@ class HomeController
     public function list(): void
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
-        if (!$usuarioActual["verificado"]) {
-            $data = [
-                "mensaje" => "Verifica tu correo por favor.",
-                "correo" => $usuarioActual["email"],
-                "id_usuario" => $usuarioActual["id"]
-            ];
-            $this->presenter->show("validacionCorreo", $data);
+        if ($usuarioActual == null) {
+            $this->redireccionar("login");
         } else {
-            $this->presenter->show("home", []);
+            if (!$usuarioActual["verificado"]) {
+                $data = [
+                    "mensaje" => "Verifica tu correo por favor.",
+                    "correo" => $usuarioActual["email"],
+                    "id_usuario" => $usuarioActual["id"]
+                ];
+                $this->presenter->show("validacionCorreo", $data);
+            } else {
+                $data = [
+                    "nombre" => $usuarioActual["nombre"],
+                    "id_usuario" => $usuarioActual["id"],
+                ];
+                $this->presenter->show("home", $data);
+            }
         }
+
     }
 
     public function perfil()
     {
-        $id = $_GET["id"] ?? null;
-        $data["usuario"] = $this->model->getUsuarioPorId($id);
-        $this->presenter->show("perfil", $data);
+        $usuarioActual = $_SESSION["usuario"] ?? null;
+        if ($usuarioActual == null) {
+            $this->redireccionar("login");
+        } else {
+            $id = $_GET["id"] ?? null;
+            $data["usuario"] = $this->model->getUsuarioPorId($id);
+            $this->presenter->show("perfil", $data);
+        }
     }
 
-    public function login()
+    /**
+     * @param $ruta
+     * @return void
+     */
+    #[NoReturn] private function redireccionar($ruta): void
     {
-        echo "Login";
-    }
-
-    public function registro()
-    {
-        echo "Login";
+        header("Location: /PW2-preguntones/$ruta");
+        exit();
     }
 }

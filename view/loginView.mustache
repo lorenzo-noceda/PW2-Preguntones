@@ -11,13 +11,19 @@
     <!--  ESTILOS LOGIN  -->
     <link href="/PW2-Preguntones/public/css/login.css" rel="stylesheet">
     <title>{{formTitle}}</title></head>
-<body>
-<main class="form-container col-11 col-sm-9 col-md-6 col-lg-4 col-xl-3 p-4">
-    <h1>{{formTitle}}</h1>
-    {{#error}}
-        <h3 class="text-danger">{{error}}</h3>
-    {{/error}}
-    <form action="{{formAction}}" method="POST" class="d-flex flex-column align-items-center">
+<body class="d-flex flex-column gap-2">
+<header class="col-12 bg-primary text-white styledHeader">
+    <nav class="col-5 d-flex justify-content-center mx-auto align-items-center">
+        <a href="/PW2-Preguntones/home" class="text-white text-decoration-none">
+            <h3>Preguntones</h3>
+        </a>
+    </nav>
+</header>
+<main class="col-12 p-4 d-flex flex-column align-items-center">
+    <form action="{{formAction}}"
+          method="POST"
+          class="col-11 col-sm-8 col-md-7 col-lg-4 mx-auto d-flex flex-column gap-1 p-4">
+        <h1>{{formTitle}}</h1>
         <div class="form-group col-12">
             <label for="username">Nombre de Usuario</label>
             <input class="col-12 rounded-4"
@@ -42,12 +48,18 @@
             <input type="checkbox" id="remember" name="remember">
             <label for="remember" class="m-0">Recuérdame</label>
         </div>
+        {{#error}}
+            <p class="text-danger m-0 p-0">{{error}}</p>
+        {{/error}}
         <button type="submit" class="mx-auto">{{submitButtonText}}</button>
     </form>
     <div class="register-link">
         {{registerPrompt}} <a href="{{registerLink}}">{{registerLinkText}}</a>
     </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
 <script>
     function togglePassword() {
         var passwordInput = document.getElementById('password');
