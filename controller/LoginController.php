@@ -11,8 +11,17 @@ class LoginController
         $this->presenter = $presenter;
     }
 
-    public function list() {
-        $this->presenter->show("login", []);
+    public function list()
+    {
+        $data = [
+            'formTitle' => 'Iniciar sesión',
+            'formAction' => '/PW2-Preguntones/login/validar',
+            'submitButtonText' => 'Ingresar',
+            "mensaje" => $_SESSION["success"],
+            "error" => $_SESSION["error"] ?? null,
+        ];
+        unset($_SESSION["error"]);
+        $this->presenter->show("login", $data);
     }
 
     public function validar()
@@ -22,20 +31,26 @@ class LoginController
             $pass = $_POST['password'];
 
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
-            echo "POST";
-            var_dump($usuario);
-
-//            if ($usuario && password_verify($pass, $usuario['password'])) {
-//                session_start();
-//                $_SESSION['usuario'] = $usuario;
-//                $this->presenter->show("home", []);
-//            } else {
-//                $error = 'Credenciales incorrectas';
-//                require('view/loginView.mustache');
-//            }
+            if ($usuario && password_verify($pass, $usuario['password'])) {
+                $_SESSION['usuario'] = $usuario;
+                $this->redireccionar("home");
+            } else {
+                $_SESSION["error"] = "Credenciales incorrectas";
+                $this->redireccionar("login");
+            }
         } else {
             echo "No entré";
 //            require('view/loginView.mustache');
         }
+    }
+
+    /**
+     * @param $ruta
+     * @return void
+     */
+    private function redireccionar($ruta)
+    {
+        header("Location: /PW2-preguntones/$ruta");
+        exit();
     }
 }

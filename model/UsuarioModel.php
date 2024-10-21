@@ -12,6 +12,24 @@ class UsuarioModel
         $this->database = $database;
     }
 
+    public function registrarJugador($usuario){
+        return $this->guardarUsuario($usuario);
+    }
+
+    public function getUltimoIdGenerado(){
+        return $this->database->getUltimoIdGenerado();
+    }
+
+    public function getSexos() {
+        $q = 'SELECT * FROM sexo';
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return [];
+        }
+    }
+
     public function registrarUsuario($usuario)
     {
         $usuario['password'] = password_hash($usuario['password'], PASSWORD_DEFAULT);
