@@ -33,6 +33,19 @@ class PaisYCiudadModel
         } else {
             return [];
         }
+    }
 
+    public function getPaisesMenosElDelUsuario($paisUsuario) {
+        $query= "SELECT * FROM pais
+                 WHERE nombre != :pais";
+        $params = [
+            ["columna" => "pais", "valor" => $paisUsuario]
+        ];
+        $result = $this->database->query($query, "MULTIPLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return [];
+        }
     }
 }

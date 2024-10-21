@@ -12,42 +12,6 @@ class UsuarioModel
         $this->database = $database;
     }
 
-
-    public function verificarCampos($usuario)
-    {
-        $existeCorreo = $this->existeYaElCorreo($usuario["email"]);
-        $existeNombreDeUsuario = $this->existeYaElUsuario($usuario["username"]);
-        $error = "";
-        $data = [];
-
-        if ($existeCorreo) {
-            $error = "Ya existe ese correo, elige otro.";
-        }
-        if ($existeNombreDeUsuario) {
-            $error = "Ya existe nombre de usuario, elige otro.";
-        }
-        if ($usuario["password"] !== $usuario["confirmPassword"]) {
-            $error = "Las contraseñas son diferentes.";
-        }
-
-        $data["message"] = $error;
-        $data["success"] = empty($error);
-        return $data;
-    }
-
-
-    public function existeYaElUsuario($username): bool
-    {
-        return $this->getUsuarioPorUsername($username) != null;
-    }
-
-    public function existeYaElCorreo($correo): bool
-    {
-        return $this->getUsuarioPorCorreo($correo) != null;
-    }
-
-
-
     public function guardarJugador()
     {
         $id = $this->getUltimoIdGenerado();
@@ -114,6 +78,20 @@ class UsuarioModel
         }
     }
 
+    public function getSexosMenosElDelUsuario ($sexoUsuario) {
+        $query= "SELECT * FROM sexo
+                 WHERE nombre != :sexo";
+        $params = [
+            ["columna" => "sexo", "valor" => $sexoUsuario]
+        ];
+        $result = $this->database->query($query, "MULTIPLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return [];
+        }
+    }
+
     public function registrarUsuario($usuario)
     {
         $usuario['password'] = password_hash($usuario['password'], PASSWORD_DEFAULT);
@@ -159,10 +137,14 @@ class UsuarioModel
     {
         if ($id != null) {
             $q = "
-            SELECT u.*, c.nombre AS ciudad, p.nombre AS pais 
+            SELECT u.*, 
+                   c.nombre AS ciudad, 
+                   p.nombre AS pais,
+                   s.id AS sexoId, s.nombre AS sexoNombre 
             FROM usuario u
-            JOIN ciudad c on u.id_ciudad = c.id
-            JOIN pais p on c.id_pais = p.id
+            JOIN sexo s ON u.id_sexo = s.id
+            JOIN ciudad c ON u.id_ciudad = c.id
+            JOIN pais p ON c.id_pais = p.id
             WHERE u.id = :id";
             $params = [
                 ["columna" => "id", "valor" => $id],
@@ -209,5 +191,42 @@ class UsuarioModel
             return null;
         }
     }
+
+    /**
+     * @param $usuario
+     * @return array
+     */
+    public function verificarCampos($usuario): array
+    {
+        $existeCorreo = $this->existeYaElCorreo($usuario["email"]);
+        $existeNombreDeUsuario = $this->existeYaElUsuario($usuario["username"]);
+        $error = "";
+        $data = [];
+
+        if ($existeCorreo) {
+            $error = "Ya existe ese correo, elige otro.";
+        }
+        if ($existeNombreDeUsuario) {
+            $error = "Ya existe nombre de usuario, elige otro.";
+        }
+        if ($usuario["password"] !== $usuario["confirmPassword"]) {
+            $error = "Las contraseñas son diferentes.";
+        }
+
+        $data["message"] = $error;
+        $data["success"] = empty($error);
+        return $data;
+    }
+    public function existeYaElUsuario($username): bool
+    {
+        return $this->getUsuarioPorUsername($username) != null;
+    }
+
+    public function existeYaElCorreo($correo): bool
+    {
+        return $this->getUsuarioPorCorreo($correo) != null;
+    }
+
+
 
 }
