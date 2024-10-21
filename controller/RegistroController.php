@@ -54,8 +54,10 @@ class RegistroController
 
 //            $idUsuario = $this->usuarioModel->getUltimoIdGenerado();
 
-            $data["success"] = "Todo salió bien pa.";
-            $this->presenter->show("home", $data["success"]);
+            $_SESSION["success"] = "Te registraste bien, ahora logueate capo.";
+            header("Location: /PW2-Preguntones/login");
+            exit();
+//            $this->presenter->show("home", $data["success"]);
 //            require 'view/registro.success.mustache';
         } else {
             require 'view/registroView.mustache';
