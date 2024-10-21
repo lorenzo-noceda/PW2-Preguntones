@@ -33,19 +33,6 @@ class HomeController
                 $this->presenter->show("home", $data);
             }
         }
-
-    }
-
-    public function perfil()
-    {
-        $usuarioActual = $_SESSION["usuario"] ?? null;
-        if ($usuarioActual == null) {
-            $this->redireccionar("login");
-        } else {
-            $id = $_GET["id"] ?? null;
-            $data["usuario"] = $this->model->getUsuarioPorId($id);
-            $this->presenter->show("perfil", $data);
-        }
     }
 
     /**
