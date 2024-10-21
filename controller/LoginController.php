@@ -26,6 +26,11 @@ class LoginController
         $this->presenter->show("login", $data);
     }
 
+    public function cerrarSesion() {
+        unset($_SESSION["usuario"]);
+        $this->redireccionar("login");
+    }
+
     public function validar(): void
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {

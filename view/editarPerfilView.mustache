@@ -23,8 +23,8 @@
             <h3>Preguntones</h3>
         </a>
         <div class="hambugerContainer">
-            <a href="/PW2-Preguntones/home/perfil?id={{id_usuario}}">
-            <img src="/PW2-Preguntones/public/images/user.png"/>
+            <a href="/PW2-Preguntones/perfil?id={{id_usuario}}">
+                <img src="/PW2-Preguntones/public/images/user.png" alt="Imagen Usuario"/>
             </a>
         </div>
     </nav>
@@ -34,7 +34,7 @@
         <form action="/PW2-Preguntones/perfil/actualizar"
               method="POST"
               class="col-11 col-sm-8 col-md-7 col-lg-4 mx-auto d-flex flex-column gap-1 p-4">
-            <h3>Registro de usuario</h3>
+            <h3>Editar perfil</h3>
             <div class="col-12">
                 <label for="email" class="form-label">Dirección de correo</label>
                 <input class="form-control bg-dark-subtle"
@@ -92,7 +92,7 @@
                     <label for="location">País y ciudad</label>
                     <select id="pais" name="pais" class="form-select">
                         {{#pais}}
-                        <option value="{{pais}}" selected>{{pais}}</option>
+                            <option value="{{pais}}" selected>{{pais}}</option>
                         {{/pais}}
                         {{#paises}}
                             <option value="{{id}}">{{nombre}}</option>
@@ -102,7 +102,7 @@
                 <div class="form-group col">
                     <label for="location">Ciudad</label>
                     <select id="ciudad" name="id_ciudad" class="form-select bg-dark-subtle">
-<!--                        <option value="">Selecciona una ciudad</option>-->
+                        <!--                        <option value="">Selecciona una ciudad</option>-->
                         <option value="">En desarrollo...</option>
                     </select>
                 </div>
@@ -119,22 +119,22 @@
             </div>
             <input type="hidden" value="{{password}}"/>
             <!--   CONTRASEÑAS   -->
-<!--            <div class="form-group">-->
-<!--                <label for="password" class="form-label">Contraseña</label>-->
-<!--                <input class="form-control"-->
-<!--                       type="password"-->
-<!--                       id="password"-->
-<!--                       name="password"-->
-<!--                       required>-->
-<!--            </div>-->
-<!--            <div class="form-group">-->
-<!--                <label for="confirmPassword" class="form-label">Repetir contraseña</label>-->
-<!--                <input class="form-control"-->
-<!--                       type="password"-->
-<!--                       id="confirmPassword"-->
-<!--                       name="confirmPassword"-->
-<!--                       required>-->
-<!--            </div>-->
+            <!--            <div class="form-group">-->
+            <!--                <label for="password" class="form-label">Contraseña</label>-->
+            <!--                <input class="form-control"-->
+            <!--                       type="password"-->
+            <!--                       id="password"-->
+            <!--                       name="password"-->
+            <!--                       required>-->
+            <!--            </div>-->
+            <!--            <div class="form-group">-->
+            <!--                <label for="confirmPassword" class="form-label">Repetir contraseña</label>-->
+            <!--                <input class="form-control"-->
+            <!--                       type="password"-->
+            <!--                       id="confirmPassword"-->
+            <!--                       name="confirmPassword"-->
+            <!--                       required>-->
+            <!--            </div>-->
             {{#error}}
                 <p class="text-danger m-0 p-0">{{error}}</p>
             {{/error}}
