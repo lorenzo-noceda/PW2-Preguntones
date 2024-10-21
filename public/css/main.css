@@ -7,6 +7,10 @@
     list-style: none;
 }
 
+body {
+    min-height: calc(100vh - 80px);
+}
+
 
 /* HELPERS */
 .bor1 {

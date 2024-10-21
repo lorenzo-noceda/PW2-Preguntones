@@ -16,60 +16,116 @@ class RegistroController
 
     public function list()
     {
+        $_SESSION["paises"] = $this->paisesModel->getPaises();
+        $_SESSION["sexo"] = $this->usuarioModel->getSexos();
+
         $data = [
-            'formTitle' => 'Registro de Usuario',
-            'formAction' => '/PW2-Preguntones/registro/registrar',
-            'submitButtonText' => 'Registrar',
-            'loginLink' => 'view/login',
-            'paises' => $this->paisesModel->getPaises(),
-            "sexo" => $this->usuarioModel->getSexos(),
+            'paises' => $_SESSION["paises"],
+            "sexo" => $_SESSION["sexo"],
+            "error" => $_SESSION["error"] ?? null,
         ];
+
+        unset($_SESSION["error"]);
         $this->presenter->show("registro", $data);
     }
 
+
     // Registrar
-    public function registrar()
+    public function registrar(): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $usuario = [
-                'nombre' => $_POST['nombre'],
-                'apellido' => $_POST['apellido'],
-                'username' => $_POST['username'],
-                'email' => $_POST['email'],
-                'password' => $_POST['password'],
-                'anio_nacimiento' => $_POST['anio_nacimiento'],
-                'id_sexo' => $_POST['id_sexo'],
-                'id_ciudad' => $_POST['id_ciudad']
-            ];
+            // Obtener información del formulario
+            $usuario = $this->obtenerDatosDelUsuario();
 
-            $resultadoUsuario = $this->usuarioModel->registrarUsuario($usuario);
+            // Validar campos (contraseñas, correo y username)
+            $result = $this->usuarioModel->verificarCampos($usuario);
 
-            if (!$resultadoUsuario['success']) {
-//                $data["error"] = RegistroModel::ERROR_REGISTRO_USUARIO;
-                $data["error"] = "Algo salio mal.";
-//            require 'view/registroView.mustache';
-                $this->presenter->show("registro", $data["error"]);
-                return;
+            var_dump($result);
+
+            // Manejar error de validación
+            if (!$result["success"]) {
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
             }
 
-//            $idUsuario = $this->usuarioModel->getUltimoIdGenerado();
+            // Registrar usuario
+            $resultadoUsuario = $this->usuarioModel->registrarUsuario($usuario);
 
-            $_SESSION["success"] = "Te registraste bien, ahora logueate capo.";
-            header("Location: /PW2-Preguntones/login");
-            exit();
-//            $this->presenter->show("home", $data["success"]);
-//            require 'view/registro.success.mustache';
+            // Manejar error de registro
+            if (!$resultadoUsuario['success']) {
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
+            }
+
+            // Guardamos jugador
+            $result = $this->usuarioModel->guardarJugador();
+
+            // Manejar error
+            if ($result["success"]) {
+                $_SESSION["correoParaValidar"] = $usuario['email'];
+                $_SESSION["usuario"] = $usuario;
+                $_SESSION["id_usuario"] = $resultadoUsuario["lastId"];
+                $this->redireccionar("registro/validarCorreo");
+            } else {
+                $_SESSION["error"] = $result["message"];
+                $this->redireccionar("registro");
+            }
+        } else $this->redireccionar("registro");
+    }
+
+    public function validarJugador()
+    {
+        $id = $_POST["id_usuario"];
+        $result = $this->usuarioModel->validarJugador($id);
+        if ($result["success"]) {
+            $_SESSION['usuario']["verificado"] = true;
+            $this->redireccionar("home");
         } else {
-            require 'view/registroView.mustache';
-
+            $data = ["error" => "Algo salió mal"];
+            $this->presenter->show("error", $data);
         }
     }
 
+    public function validarCorreo()
+    {
+        $data = [
+            "correoParaValidar" => $_SESSION["correoParaValidar"] ?? "nada crack.",
+            "id_usuario" => $_SESSION["id_usuario"],
+        ];
+        $this->presenter->show("validacionCorreo", $data);
+    }
+
+
     public function getCiudades()
     {
-
         $id = $_GET["id"];
         $variablesCiudades = $this->paisesModel->getCiudades($id);
         echo json_encode($variablesCiudades);
     }
+
+    private function obtenerDatosDelUsuario(): array
+    {
+        return [
+            'nombre' => $_POST['nombre'],
+            'apellido' => $_POST['apellido'],
+            'username' => $_POST['username'],
+            'email' => $_POST['email'],
+            'password' => $_POST['password'],
+            'anio_nacimiento' => $_POST['anio_nacimiento'],
+            'id_sexo' => $_POST['id_sexo'],
+            'id_ciudad' => $_POST['id_ciudad'],
+            "confirmPassword" => $_POST['confirmPassword'],
+        ];
+    }
+
+    /**
+     * @param $ruta
+     * @return void
+     */
+    #[NoReturn] private function redireccionar($ruta): void
+    {
+        header("Location: /PW2-preguntones/$ruta");
+        exit();
+    }
+
 }
