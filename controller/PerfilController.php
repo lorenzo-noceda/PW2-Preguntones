@@ -22,13 +22,7 @@ class PerfilController
         $this->presenter->show("perfil", $data);
     }
 
-    private function validarUsuario(): void
-    {
-        $usuarioActual = $_SESSION["usuario"] ?? null;
-        if ($usuarioActual == null) {
-            $this->redireccionar("login");
-        }
-    }
+
 
     public function editar()
     {
@@ -38,6 +32,18 @@ class PerfilController
         $data["paises"] = $this->paisModel->getPaisesMenosElDelUsuario($data["usuario"]["pais"]);
         $data["sexo"] = $this->usuarioModel->getSexosMenosElDelUsuario($data["usuario"]["sexoNombre"]);
         $this->presenter->show("editarPerfil", $data);
+    }
+
+    public function actualizar() {
+        echo "<h1>En desarrollo</h1>";
+    }
+
+    private function validarUsuario(): void
+    {
+        $usuarioActual = $_SESSION["usuario"] ?? null;
+        if ($usuarioActual == null) {
+            $this->redireccionar("login");
+        }
     }
 
     /**
