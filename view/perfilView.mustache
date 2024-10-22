@@ -17,15 +17,17 @@
 {{#usuario}}
 <header class="col-12 bg-primary text-white styledHeader">
     <nav class="col-10 col-md-5 col-xl-4 d-flex justify-content-between mx-auto align-items-center">
-        <div class="hambugerContainer">
-            <img src="/PW2-Preguntones/public/images/hamburger.png"/>
-        </div>
-        <a href="/PW2-Preguntones/home" class="text-white text-decoration-none">
+        <a href="/PW2-Preguntones/login/cerrarSesion"
+           class="col-3 d-flex justify-content-start text-decoration-none">
+            <button class="btn btn-danger">Cerrar sesión</button>
+        </a>
+        <a href="/PW2-Preguntones/home"
+           class="text-white text-decoration-none col-6 d-flex justify-content-center">
             <h3>Preguntones</h3>
         </a>
-        <div class="hambugerContainer">
-            <a href="/PW2-Preguntones/perfil?id={{id}}">
-            <img src="/PW2-Preguntones/public/images/user.png" alt="Imagen Usuario"/>
+        <div class="col-3 d-flex justify-content-end">
+            <a href="/PW2-Preguntones/perfil?id={{id_usuario}}" class="userImageContainer">
+            <img src="/PW2-Preguntones/public/images/user.png"/>
             </a>
         </div>
     </nav>
