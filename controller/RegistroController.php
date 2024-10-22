@@ -51,6 +51,8 @@ class RegistroController
             // Registrar usuario
             $resultadoUsuario = $this->usuarioModel->registrarUsuario($usuario);
 
+            var_dump($resultadoUsuario["success"]);
+
             // Manejar error de registro
             if (!$resultadoUsuario['success']) {
                 $_SESSION["error"] = $result["message"];
@@ -63,7 +65,7 @@ class RegistroController
             // Manejar error
             if ($result["success"]) {
                 $_SESSION["correoParaValidar"] = $usuario['email'];
-                $_SESSION["usuario"] = $usuario;
+                $_SESSION["usuario"] = $this->usuarioModel->getUsuarioPorCorreo($usuario['email']);
                 $_SESSION["id_usuario"] = $resultadoUsuario["lastId"];
                 $this->redireccionar("registro/validarCorreo");
             } else {

@@ -114,7 +114,6 @@ class UsuarioModel
             ["columna" => "anio_nacimiento", "valor" => $usuario['anio_nacimiento']],
             ["columna" => "id_sexo", "valor" => $usuario['id_sexo']],
             ["columna" => "id_ciudad", "valor" => $usuario['id_ciudad']],
-            ["columna" => "anio_nacimiento", "valor" => $usuario['nombre']],
         ];
 
         $result = $this->database->query($query, 'INSERT', $params);

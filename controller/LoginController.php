@@ -26,7 +26,8 @@ class LoginController
         $this->presenter->show("login", $data);
     }
 
-    public function cerrarSesion() {
+    public function cerrarSesion()
+    {
         unset($_SESSION["usuario"]);
         $this->redireccionar("login");
     }
@@ -39,9 +40,9 @@ class LoginController
 
             // Obtener usuario de la DB
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
-
+            //$usuario["password"] == $pass
             //password_verify($pass, $usuario['password']) usar en segundo if cuando este hasheadas todas
-            if ($usuario != null && ($usuario["password"] == $pass)) {
+            if ($usuario != null && (password_verify($pass, $usuario['password']))) {
                 // Guardamos usuario en sesión
                 $_SESSION['usuario'] = $usuario;
                 // A casita perro
