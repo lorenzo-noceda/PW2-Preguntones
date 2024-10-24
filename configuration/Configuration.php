@@ -11,10 +11,12 @@ include_once(__DIR__ . "/../controller/HomeController.php");
 include_once(__DIR__ . "/../controller/RegistroController.php");
 include_once(__DIR__ . "/../controller/LoginController.php");
 include_once(__DIR__ . "/../controller/PerfilController.php");
+include_once(__DIR__ . "/../controller/JuegoController.php");
 
 // Models
 include_once(__DIR__ . "/../model/UsuarioModel.php");
 include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
+include_once(__DIR__ . "/../model/JuegoModel.php");
 
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
 
@@ -44,6 +46,12 @@ class Configuration
             $this->getPresenter());
     }
 
+    public function getJuegoController(){
+        return new JuegoController(
+            $this->getJuegoModel(),
+            $this->getPresenter());
+    }
+
 
 
 
@@ -56,6 +64,11 @@ class Configuration
     private function getPaisYCiudadModel()
     {
         return new PaisYCiudadModel($this->getDatabase());
+    }
+
+    private function getJuegoModel()
+    {
+        return new JuegoModel($this->getDatabase());
     }
 
     // Helpers
