@@ -3,13 +3,15 @@
 class UsuarioModel
 {
     private $database;
+    private $mailPresenter;
 //    const string ERROR_REGISTRO_USUARIO = 'No se pudo registrar al usuario';
 //    const string ERROR_REGISTRO_JUGADOR = 'No se pudo registrar al jugador';
 //    const string SUCCESS_REGISTRO = 'Jugador registrado correctamente';
 
-    public function __construct($database)
+    public function __construct($database, $mailPresenter)
     {
         $this->database = $database;
+        $this->mailPresenter = $mailPresenter;
     }
 
     public function guardarJugador()
@@ -22,8 +24,19 @@ class UsuarioModel
                     (:id, :verificado)";
         $params = [
             ["columna" => "id", "valor" => $id],
-            ["columna" => "verificado", "valor" => false],
+            ["columna" => "verificado", "valor" => 0],
         ];
+        $this->mailPresenter->setRecipient('lorenzonoceda7@gmail.com', 'Lorenzo');
+        $this->mailPresenter->setSubject('Funcó papá');
+        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>cliquea aca</a>");
+        try {
+            // Enviar el correo
+            if ($this->mailPresenter->sendEmail()) {
+                echo 'El correo ha sido enviado';
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
         return $this->database->query($query, 'INSERT', $params);
     }
 
