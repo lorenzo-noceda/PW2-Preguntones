@@ -1,0 +1,7 @@
+.respuesta {
+    transition: all .3s;
+}
+
+.respuesta:hover {
+    background-color: grey;
+}
