@@ -17,38 +17,59 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
         $juego = $this->model->empezar();
-        $juego["pregunta"] = ["id" => 0, "pregunta" => "¿Cual es el primer nombre de Messi?"];
-        $juego["respuestas"] = [
-            ["id" => 0, "respuesta" => "Lionel", "esCorrecta" => true],
-            ["id" => 1, "respuesta" => "Andres", "esCorrecta" => false],
-            ["id" => 2, "respuesta" => "Natalia", "esCorrecta" => false],
-            ["id" => 3, "respuesta" => "Diego", "esCorrecta" => false],
-        ];
-        $_SESSION["respuestas"] = $juego["respuestas"];
-        $_SESSION["correcta"] = $juego["respuestas"][0];
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
             "pregunta" => $juego["pregunta"],
             "respuestas" => $juego["respuestas"],
         ];
+
         $this->presenter->show("juego", $data);
+    }
+
+
+    private function verVariable($data): void
+    {
+        echo '<pre>' . print_r($data, true) . '</pre>';
     }
 
     public function validarRespuesta()
     {
+        $this->validarPreguntaRespuestaRecibidas();
+        $preguntaId = $_POST["pregunta_id"] ?? null;
         $respuestaElegidaId = $_POST["respuesta_id"] ?? null;
-        $estado = "respondiste mal";
-        foreach ($_SESSION["respuestas"] as $respuesta) {
-            if ($respuesta["id"] == (int)$respuestaElegidaId
-                && $respuesta["esCorrecta"]) {
-                $estado = "respondiste bien";
+        $estado = false;
+
+        $pregunta = $this->model->getPreguntaPorIdTest($preguntaId);
+        // $this->verVariable($pregunta);
+
+        $respuestas = $this->model->getRespuestasDePreguntaTest($pregunta["data"]["pregunta"]["id"]);
+
+        if ($respuestas && $pregunta["success"]) {
+            foreach ($respuestas as $r) {
+                if ((int)$r["id"] == (int)$respuestaElegidaId
+                    && $r["esCorrecta"]) {
+                    $estado = true;
+                    break;
+                }
             }
         }
-        echo '<br>' . $estado;
+
+        $data["estado"] = $estado;
+        $this->presenter->show("respuestaPregunta", $data);
     }
 
-    private function validarUsuario()
+    public function reportar () {
+        $idPreguntaReporte = $_GET["id"];
+        $data["id"] = $idPreguntaReporte;
+        $this->presenter->show("reportePregunta", $data);
+    }
+
+    /**
+     * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
+     * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
+     */
+    private function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
         if ($usuarioActual == null) {
@@ -57,12 +78,29 @@ class JuegoController
         return $usuarioActual;
     }
 
+    /**
+     * Valida que el usuario este verificado sino hace uso de <code>header</code> para redireccionar y que valide su correo.
+     * @param $usuario
+     * @return void
+     */
     private function validarActivacion($usuario): void
     {
         if (!$usuario["verificado"]) {
             $_SESSION["correoParaValidar"] = $usuario["email"];
             $_SESSION["id_usuario"] = $usuario["id"];
             $this->redireccionar("registro/validarCorreo");
+        }
+    }
+
+    /**
+     * Valida si los parametros (pregunta_id y respuesta_id) estan establecidos luego de haber respondido. Sino usa <code>header</code> para redireccionar por error.
+     * @return void
+     */
+    private function validarPreguntaRespuestaRecibidas() : void {
+        $params = isset($_POST["pregunta_id"]) && isset($_POST["respuesta_id"]);
+        if (!$params) {
+            $_SESSION["error"] = "Ocurrió un error.";
+            $this->redireccionar("home");
         }
     }
 

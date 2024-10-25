@@ -10,15 +10,12 @@
     <!--  CSS GENERAL   -->
     <link href="/PW2-Preguntones/public/css/main.css" rel="stylesheet">
     <!--  CSS PERFIL   -->
-    <link href="/PW2-Preguntones/public/css/juego.css" rel="stylesheet">
-    <title>Juego</title>
+    <link href="/PW2-Preguntones/public/css/respuestaCorrecta.css" rel="stylesheet">
+    <title>Respuesta Correcta</title>
 </head>
 <body>
 <header class="col-12 bg-primary text-white styledHeader">
     <nav class="col-10 col-md-5 col-xl-4 d-flex mx-auto align-items-center">
-        <!--        <div class="hambugerContainer">-->
-        <!--            <img src="/PW2-Preguntones/public/images/hamburger.png"/>-->
-        <!--        </div>-->
         <a href="/PW2-Preguntones/login/cerrarSesion"
            class="col-3 d-flex justify-content-start text-decoration-none">
             <button class="btn btn-danger">Cerrar sesión</button>
@@ -35,37 +32,24 @@
     </nav>
 </header>
 <main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4 d-flex flex-column gap-2 mx-auto">
-    <h1 class="text-center">¡Hora de jugar {{nombre}}!</h1>
-    <div class="col-12 d-flex flex-column gap-2">
-        <!--   PREGUNTA     -->
-        <div class="text-center col-12 py-5 fs-4 fw-semibold bg-dark-subtle rounded-4">
-            {{#pregunta}}
-                <p class="m-0 p-0">{{pregunta}}</p>
-            {{/pregunta}}
-        </div>
-        <!--   RESPUESTAS     -->
-        <form action="/PW2-Preguntones/juego/validarRespuesta"
-              method="post"
-              enctype="multipart/form-data"
-              class="mt-2 d-flex flex-column gap-2"
-              id="form-pregunta">
-            {{#pregunta}}
-                <input type="hidden" value="{{id}}" name="pregunta_id">
-            {{/pregunta}}
-            {{#respuestas}}
-                <button type="submit" class="btn btn-primary col-12"
-                        name="respuesta_id"
-                        value="{{id}}">{{respuesta}}</button>
-            {{/respuestas}}
-        </form>
-    </div>
-    <div class="mx-auto">
-        {{#pregunta}}
-            <a href="/PW2-Preguntones/juego/reportar?id={{id}}">
-            <button class="btn btn-danger">Reportar pregunta</button>
+    {{#estado}}
+        <h1 class="text-center text-success">¡Respondiste correctamente!</h1>
+        <a href="/PW2-Preguntones/juego" class="mx-auto">
+            <button class="btn btn-success">Jugar otra</button>
+        </a>
+    {{/estado}}
+    {{^estado}}
+        <h1 class="text-center text-danger">¡Ups! Respondiste mal.</h1>
+        <div class="d-flex gap-2">
+            <a href="/PW2-Preguntones/juego" class="mx-auto">
+                <button class="btn btn-success">Jugar otra</button>
             </a>
-        {{/pregunta}}
-    </div>
+            <a href="/PW2-Preguntones/home" class="mx-auto">
+                <button class="btn btn-warning">Ir a home</button>
+            </a>
+        </div>
+    {{/estado}}
+
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
