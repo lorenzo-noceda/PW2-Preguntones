@@ -4,6 +4,7 @@ class UsuarioModel
 {
     private $database;
     private $mailPresenter;
+
 //    const string ERROR_REGISTRO_USUARIO = 'No se pudo registrar al usuario';
 //    const string ERROR_REGISTRO_JUGADOR = 'No se pudo registrar al jugador';
 //    const string SUCCESS_REGISTRO = 'Jugador registrado correctamente';
@@ -14,9 +15,13 @@ class UsuarioModel
         $this->mailPresenter = $mailPresenter;
     }
 
-    public function guardarJugador()
+    public function guardarJugador($usuario)
     {
         $id = $this->getUltimoIdGenerado();
+
+        $emailUsuario = $usuario['email'];
+        $nombreUsuario = $usuario['nombre'];
+
         $query = "
                 INSERT INTO jugador
                     (id, verificado)
@@ -26,18 +31,24 @@ class UsuarioModel
             ["columna" => "id", "valor" => $id],
             ["columna" => "verificado", "valor" => 0],
         ];
-        $this->mailPresenter->setRecipient('lorenzonoceda7@gmail.com', 'Lorenzo');
-        $this->mailPresenter->setSubject('Funcó papá');
-        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>cliquea aca</a>");
+
+        $this->enviarMailValidacion($emailUsuario, $nombreUsuario);
+
+        return $this->database->query($query, 'INSERT', $params);
+    }
+
+    public function enviarMailValidacion($emailUsuario, $nombreUsuario){
+        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
+        $this->mailPresenter->setSubject('Confirmación de registro');
+        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
+
         try {
-            // Enviar el correo
             if ($this->mailPresenter->sendEmail()) {
                 echo 'El correo ha sido enviado';
             }
         } catch (Exception $e) {
             echo $e->getMessage();
         }
-        return $this->database->query($query, 'INSERT', $params);
     }
 
     public function getVerificacionDeUsuario($idusuario)
@@ -238,6 +249,8 @@ class UsuarioModel
     {
         return $this->getUsuarioPorCorreo($correo) != null;
     }
+
+
 
 
 
