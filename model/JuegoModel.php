@@ -139,6 +139,51 @@ class JuegoModel
             ]
         ];
 
+ // Pregunta 6
+        $juego[] = [
+            "pregunta" => ["id" => 3, "pregunta" => "¿Cuál es el animal terrestre más grande?"],
+            "respuestas" => [
+                ["id" => 0, "respuesta" => "Elefante", "esCorrecta" => true, "preguntaId" => 5],
+                ["id" => 1, "respuesta" => "Jirafa", "esCorrecta" => false, "preguntaId" => 5],
+                ["id" => 2, "respuesta" => "Hipopótamo", "esCorrecta" => false, "preguntaId" => 5],
+                ["id" => 3, "respuesta" => "León", "esCorrecta" => false, "preguntaId" => 5],
+            ]
+        ];
+
+        // Pregunta 7
+        $juego[] = [
+            "pregunta" => ["id" => 2, "pregunta" => "¿Cuántos continentes existen en la Tierra?"],
+            "respuestas" => [
+                ["id" => 0, "respuesta" => "5", "esCorrecta" => false, "preguntaId" => 6],
+                ["id" => 1, "respuesta" => "6", "esCorrecta" => false, "preguntaId" => 6],
+                ["id" => 2, "respuesta" => "7", "esCorrecta" => true, "preguntaId" => 6],
+                ["id" => 3, "respuesta" => "8", "esCorrecta" => false, "preguntaId" => 6],
+            ]
+        ];
+
+        // Pregunta 8
+        $juego[] = [
+            "pregunta" => ["id" => 4, "pregunta" => "¿Qué gas es esencial para la respiración humana?"],
+            "respuestas" => [
+                ["id" => 0, "respuesta" => "Oxígeno", "esCorrecta" => true, "preguntaId" => 7],
+                ["id" => 1, "respuesta" => "Nitrógeno", "esCorrecta" => false, "preguntaId" => 7],
+                ["id" => 2, "respuesta" => "Helio", "esCorrecta" => false, "preguntaId" => 7],
+                ["id" => 3, "respuesta" => "Dióxido de carbono", "esCorrecta" => false, "preguntaId" => 7],
+            ]
+        ];
+
+
+        //Pregunta 9
+        $juego[] = [
+            "pregunta" => ["id" => 5, "pregunta" => "¿Qué instrumento mide la temperatura?"],
+            "respuestas" => [
+                ["id" => 0, "respuesta" => "Barómetro", "esCorrecta" => false, "preguntaId" => 8],
+                ["id" => 1, "respuesta" => "Termómetro", "esCorrecta" => true, "preguntaId" => 8],
+                ["id" => 2, "respuesta" => "Anemómetro", "esCorrecta" => false, "preguntaId" => 8],
+                ["id" => 3, "respuesta" => "Higrómetro", "esCorrecta" => false, "preguntaId" => 8],
+            ]
+        ];
+
 
         return $juego;
     }

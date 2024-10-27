@@ -16,6 +16,12 @@ class JuegoController
     {
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
+
+        if(!isset($_SESSION["contadorCorrectas"])){
+            $_SESSION["contadorCorrectas"] = 0;
+            $_SESSION["puntaje"]=0;
+        }
+
         $juego = $this->model->empezar();
         $data = [
             "nombre" => $usuarioActual["nombre"],
@@ -39,6 +45,7 @@ class JuegoController
         $preguntaId = $_POST["pregunta_id"] ?? null;
         $respuestaElegidaId = $_POST["respuesta_id"] ?? null;
         $estado = false;
+        $maximasCorrectas=5;
 
         $pregunta = $this->model->getPreguntaPorIdTest($preguntaId);
         // $this->verVariable($pregunta);
@@ -48,15 +55,26 @@ class JuegoController
         if ($respuestas && $pregunta["success"]) {
             foreach ($respuestas as $r) {
                 if ((int)$r["id"] == (int)$respuestaElegidaId
-                    && $r["esCorrecta"]) {
+                    && $r["esCorrecta"]){
                     $estado = true;
                     break;
                 }
             }
         }
+        if($estado){
+            $_SESSION["contadorCorrectas"] ++;
+            $_SESSION["puntaje"] +=10;
+            if($_SESSION["contadorCorrectas"] == $maximasCorrectas) {
+                $this->finalizarJuego();
+                return;
+            }
 
-        $data["estado"] = $estado;
-        $this->presenter->show("respuestaPregunta", $data);
+            }else{
+            $this->finalizarJuego();
+            return;
+        }
+
+        $this->redireccionar("juego");
     }
 
     public function reportar () {
@@ -112,5 +130,19 @@ class JuegoController
     {
         header("Location: /PW2-preguntones/$ruta");
         exit();
+    }
+
+    private function finalizarJuego()
+    {
+        $data = [
+            "puntaje" => $_SESSION["puntaje"],
+        ];
+
+        // Reinicia el puntaje y el contador para la próxima partida
+        unset($_SESSION["contadorCorrectas"]);
+        unset($_SESSION["puntaje"]);
+
+
+        $this->presenter->show("respuestaPregunta", $data);
     }
 }
