@@ -142,7 +142,13 @@ class JuegoController
         unset($_SESSION["contadorCorrectas"]);
         unset($_SESSION["puntaje"]);
 
+        if($data["puntaje"] >=50 ){
+            $this->presenter->show("resultadoPartida", $data);
+        }else{
+            $this->presenter->show("respuestaPregunta", $data);
+        }
 
-        $this->presenter->show("respuestaPregunta", $data);
     }
+
+
 }
