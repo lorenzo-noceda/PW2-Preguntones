@@ -1,5 +1,7 @@
 <?php
 
+use JetBrains\PhpStorm\NoReturn;
+
 class JuegoController
 {
 
@@ -12,17 +14,31 @@ class JuegoController
         $this->presenter = $presenter;
     }
 
-    public function list(): void
+    /*
+     con 1 metodo de tipo acción empezamos el juego
+     mientras valla todo bien lo dejamos en el metodo partida
+     cuando termina ejecutamos metetodo de acción
+
+
+     empezar () -> prepara partida
+     partida () -> renderiza a medida que va avanzando y guarda
+     finalizar () -> corta ejecución por -> abandono, pierde
+     */
+
+
+    public function empezar()
     {
+        // Validar usuario en sesión y validación de correo.
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
 
-        if(!isset($_SESSION["contadorCorrectas"])){
+        if (!isset($_SESSION["contadorCorrectas"])) {
             $_SESSION["contadorCorrectas"] = 0;
-            $_SESSION["puntaje"]=0;
+            $_SESSION["puntaje"] = 0;
         }
 
-        $juego = $this->model->empezar();
+        $juego = $this->model->empezar($usuarioActual["id"]);
+
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
@@ -33,54 +49,119 @@ class JuegoController
         $this->presenter->show("juego", $data);
     }
 
-
-    private function verVariable($data): void
+    // Método por defecto
+    public function partida(): void
     {
-        echo '<pre>' . print_r($data, true) . '</pre>';
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+
+        if (!isset($_SESSION["contadorCorrectas"])) {
+            $_SESSION["contadorCorrectas"] = 0;
+            $_SESSION["puntaje"] = 0;
+        }
+
+        $juego = $this->model->empezar($usuarioActual["id"]);
+
+        $data = [
+            "nombre" => $usuarioActual["nombre"],
+            "id_usuario" => $usuarioActual["id"],
+            "pregunta" => $juego["pregunta"],
+            "respuestas" => $juego["respuestas"],
+        ];
+
+        $this->presenter->show("juego", $data);
     }
 
-    public function validarRespuesta()
+    // Método para controlar y usar en desarrollo
+    public function status(): void
     {
-        $this->validarPreguntaRespuestaRecibidas();
-        $preguntaId = $_POST["pregunta_id"] ?? null;
-        $respuestaElegidaId = $_POST["respuesta_id"] ?? null;
-        $estado = false;
-        $maximasCorrectas=5;
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+        $data = [
+            "texto" => "Hola mundo",
+            "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
+            "todas" => $this->model->getCantidadPreguntasBD()
+        ];
+        $this->presenter->show("admin", $data);
+    }
 
-        $pregunta = $this->model->getPreguntaPorIdTest($preguntaId);
-        // $this->verVariable($pregunta);
-
-        $respuestas = $this->model->getRespuestasDePreguntaTest($pregunta["data"]["pregunta"]["id"]);
-
-        if ($respuestas && $pregunta["success"]) {
-            foreach ($respuestas as $r) {
-                if ((int)$r["id"] == (int)$respuestaElegidaId
-                    && $r["esCorrecta"]){
-                    $estado = true;
-                    break;
+    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): bool
+    {
+        $this->verVariable($arrayRespuestas);
+        if ($arrayRespuestas) {
+            foreach ($arrayRespuestas as $r) {
+                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
+                    && $r["esCorrecta"]) {
+                    return true;
                 }
             }
         }
-        if($estado){
-            $_SESSION["contadorCorrectas"] ++;
-            $_SESSION["puntaje"] +=10;
-            if($_SESSION["contadorCorrectas"] == $maximasCorrectas) {
+        return false;
+    }
+
+    // Método de validación
+    // Guarda puntaje y contador
+    // Guarda como fue respondida la pregunta // in progress...
+    public function validarRespuesta()
+    {
+        // Valido ingreso por $_POST
+        $parametros = $this->validarPreguntaRespuestaRecibidas();
+        // Asigno parametros obtenidos
+        $preguntaId = $parametros["pregunta_id"];
+        $respuestaElegidaId = $parametros["respuesta_id"];
+
+        $maximasCorrectas = 5;
+
+        $pregunta = $this->model->getPreguntaPorId($preguntaId);
+        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
+
+        $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+
+        echo $estado ? "bien" : "mal";
+
+        if ($estado) {
+            // Si responde bien, contador y puntaje actualizado
+            // Si llegó al máximo contador, corta
+            $_SESSION["contadorCorrectas"]++;
+            $_SESSION["puntaje"] += 10;
+            if ($_SESSION["contadorCorrectas"] == $maximasCorrectas) {
+                $this->model->guardarResultados();
                 $this->finalizarJuego();
                 return;
             }
-
-            }else{
+        } else {
+            // Si responde mal se termina
             $this->finalizarJuego();
             return;
         }
 
-        $this->redireccionar("juego");
+        // Flujo por si responde bien y todavía no llegó al máximo contador
+        // $this->redireccionar("juego");
+        $data = [
+            "pregunta" => $pregunta["data"]["pregunta"],
+            "correctas" => $_SESSION["contadorCorrectas"],
+            "puntaje" => $_SESSION["puntaje"],
+
+        ];
+        $this->presenter->show("despuesDePregunta", $data);
     }
 
-    public function reportar () {
+    public function reportar()
+    {
         $idPreguntaReporte = $_GET["id"];
         $data["id"] = $idPreguntaReporte;
         $this->presenter->show("reportePregunta", $data);
+    }
+
+    public function probandoDeGonza()
+    {
+        $data = [
+            "categorias" => $this->model->getCategorias(),
+            "estados" => $this->model->getEstados(),
+            "preguntas" => $this->model->getPreguntas1(),
+            "respuestas" => $this->model->getRespuestas()
+        ];
+        $this->presenter->show("vistaDePruebas", $data);
     }
 
     /**
@@ -112,15 +193,43 @@ class JuegoController
 
     /**
      * Valida si los parametros (pregunta_id y respuesta_id) estan establecidos luego de haber respondido. Sino usa <code>header</code> para redireccionar por error.
-     * @return void
+     * @return array
      */
-    private function validarPreguntaRespuestaRecibidas() : void {
+    private function validarPreguntaRespuestaRecibidas(): array
+    {
         $params = isset($_POST["pregunta_id"]) && isset($_POST["respuesta_id"]);
         if (!$params) {
             $_SESSION["error"] = "Ocurrió un error.";
             $this->redireccionar("home");
+        } else {
+            return
+                [
+                    "pregunta_id" => $_POST["pregunta_id"],
+                    "respuesta_id" => $_POST["respuesta_id"]
+                ];
         }
     }
+
+
+    private function finalizarJuego(): void
+    {
+        $data = [
+            "puntaje" => $_SESSION["puntaje"],
+        ];
+
+        // Reinicia el puntaje y el contador para la próxima partida
+        unset($_SESSION["contadorCorrectas"]);
+        unset($_SESSION["puntaje"]);
+
+        if ($data["puntaje"] >= 50) {
+            $this->presenter->show("resultadoPartida", $data);
+        } else {
+            $this->presenter->show("respuestaPregunta", $data);
+        }
+
+    }
+
+    // Helpers de clase
 
     /**
      * @param $ruta
@@ -132,22 +241,9 @@ class JuegoController
         exit();
     }
 
-    private function finalizarJuego()
+    private function verVariable($data): void
     {
-        $data = [
-            "puntaje" => $_SESSION["puntaje"],
-        ];
-
-        // Reinicia el puntaje y el contador para la próxima partida
-        unset($_SESSION["contadorCorrectas"]);
-        unset($_SESSION["puntaje"]);
-
-        if($data["puntaje"] >=50 ){
-            $this->presenter->show("resultadoPartida", $data);
-        }else{
-            $this->presenter->show("respuestaPregunta", $data);
-        }
-
+        echo '<pre>' . print_r($data, true) . '</pre>';
     }
 
 
