@@ -15,6 +15,7 @@ class JuegoModel
     {
         $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
         $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
+        shuffle($data["respuestas"]);
         return $data;
     }
 
@@ -122,6 +123,65 @@ class JuegoModel
     }
 
     // CONSULTAS A LA BASE DE DATOS
+
+    // refactorizar querys :TODO
+    public function obtenerRespondidasMalasBuenas ($idUsuario) {
+        $q = "SELECT COUNT(respondida_correctamente) as correctas
+              FROM usuario_pregunta
+              WHERE usuario_id = :idUsuario AND respondida_correctamente = true";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'SINGLE', $params);
+        $data["correctas"] = $result["data"];
+
+        $q = "SELECT COUNT(respondida_correctamente) as incorrectas
+              FROM usuario_pregunta
+              WHERE usuario_id = :idUsuario AND respondida_correctamente = false";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'SINGLE', $params);
+        $data["incorrectas"] = $result["data"];
+
+        if ($result["success"]) {
+            return $data;
+        }
+        return $result;
+
+    }
+
+    public function tienePreguntas($idUsuario): bool
+    {
+        $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+        if (count($preguntasDB) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    public function guardarRespuesta ($idUsuario, $idPregunta, $state) {
+        $q = "INSERT INTO usuario_pregunta 
+              (usuario_id, pregunta_id, respondida_correctamente) 
+              VALUES (:idUsuario, :idPregunta, :respondioBien)";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario],
+            ["columna" => "idPregunta", "valor" => $idPregunta],
+            ["columna" => "respondioBien", "valor" => $state]
+        ];
+        $result = $this->database->query($q, 'INSERT', $params);
+        return $result["success"];
+    }
+
+    public function resetUsuario_Pregunta ($idUsuario) {
+        $q = "DELETE FROM usuario_pregunta
+              WHERE usuario_id = :idUsuario";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'DELETE', $params);
+        return $result["success"];
+    }
 
     public function getPreguntaPorId($id)
     {
