@@ -37,6 +37,12 @@ class JuegoController
             $_SESSION["puntaje"] = 0;
         }
 
+        $tienePreguntasDisponibles = $this->model->tienePreguntas($usuarioActual["id"]);
+        if (!$tienePreguntasDisponibles) {
+            $data["error"] = "No tienes más preguntas disponibles";
+            $this->presenter->show("error", $data);
+            return;
+        }
         $juego = $this->model->empezar($usuarioActual["id"]);
 
         $data = [
@@ -54,6 +60,13 @@ class JuegoController
     {
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
+
+        $tienePreguntasDisponibles = $this->model->tienePreguntas($usuarioActual["id"]);
+        if (!$tienePreguntasDisponibles) {
+            $data["error"] = "No tienes más preguntas disponibles";
+            $this->presenter->show("error", $data);
+            return;
+        }
 
         if (!isset($_SESSION["contadorCorrectas"])) {
             $_SESSION["contadorCorrectas"] = 0;
@@ -77,27 +90,18 @@ class JuegoController
     {
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
+
         $data = [
             "texto" => "Hola mundo",
             "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
-            "todas" => $this->model->getCantidadPreguntasBD()
+            "todas" => $this->model->getCantidadPreguntasBD(),
+            "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
+            "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
         ];
         $this->presenter->show("admin", $data);
     }
 
-    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): bool
-    {
-        $this->verVariable($arrayRespuestas);
-        if ($arrayRespuestas) {
-            foreach ($arrayRespuestas as $r) {
-                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
-                    && $r["esCorrecta"]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+
 
     // Método de validación
     // Guarda puntaje y contador
@@ -109,6 +113,7 @@ class JuegoController
         // Asigno parametros obtenidos
         $preguntaId = $parametros["pregunta_id"];
         $respuestaElegidaId = $parametros["respuesta_id"];
+        $idUsuario = $_SESSION["usuario"]["id"];
 
         $maximasCorrectas = 5;
 
@@ -117,12 +122,10 @@ class JuegoController
 
         $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
 
-        echo $estado ? "bien" : "mal";
-
         if ($estado) {
             // Si responde bien, contador y puntaje actualizado
             // Si llegó al máximo contador, corta
-            $_SESSION["contadorCorrectas"]++;
+            $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
             $_SESSION["puntaje"] += 10;
             if ($_SESSION["contadorCorrectas"] == $maximasCorrectas) {
                 $this->model->guardarResultados();
@@ -131,19 +134,55 @@ class JuegoController
             }
         } else {
             // Si responde mal se termina
+            $this->model->guardarRespuesta(
+                $idUsuario, $pregunta["id"], false
+            );
             $this->finalizarJuego();
             return;
         }
 
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
-        $data = [
-            "pregunta" => $pregunta["data"]["pregunta"],
-            "correctas" => $_SESSION["contadorCorrectas"],
-            "puntaje" => $_SESSION["puntaje"],
+        $result = $this->model->guardarRespuesta(
+            $idUsuario, $preguntaId, true
+        );
 
-        ];
-        $this->presenter->show("despuesDePregunta", $data);
+        if ($result) {
+            $data = [
+                "pregunta" => $pregunta["texto"],
+                "correctas" => $_SESSION["contadorCorrectas"],
+                "puntaje" => $_SESSION["puntaje"],
+
+            ];
+            $this->presenter->show("despuesDePregunta", $data);
+        } else {
+            echo "error";
+        }
+
+    }
+
+    public function resetRespondidasDelUsuario()
+    {
+        $idUsuario = $_SESSION["usuario"]["id"];
+        $this->model->resetUsuario_Pregunta($idUsuario);
+    }
+
+    /** Valida si la respuesta es de la pregunta y si la respuesta es correcta.
+     * @param $arrayRespuestas
+     * @param $idRespuestaDada
+     * @return bool
+     */
+    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): bool
+    {
+        if ($arrayRespuestas) {
+            foreach ($arrayRespuestas as $r) {
+                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
+                    && $r["esCorrecta"]) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public function reportar()
