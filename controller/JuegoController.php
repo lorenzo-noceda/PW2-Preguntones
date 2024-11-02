@@ -91,14 +91,40 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
 
+        $cantidadDePartidas = $this->model->getPartidasDelUsuario($usuarioActual["id"]);
+        if (empty($cantidadDePartidas)) {
+            $cantidadDePartidas = 0;
+        } else {
+            $cantidadDePartidas = count($cantidadDePartidas);
+        }
+
+        $_SESSION["usuarios"] = $this->model->getUsuariosTest();
+
         $data = [
             "texto" => "Hola mundo",
             "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
             "todas" => $this->model->getCantidadPreguntasBD(),
             "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
             "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
+            "partidas" => $cantidadDePartidas,
+            "usuarios" => $_SESSION["usuarios"]
         ];
         $this->presenter->show("admin", $data);
+    }
+
+    public function cambiarPerfil()
+    {
+        $id = $_GET["id"];
+        $usuarios =  $_SESSION["usuarios"];
+        foreach ($usuarios as $usuario) {
+            if ($usuario["id"] == $id) {
+                $usuario["verificado"] = true;
+                $_SESSION["usuario"] = $usuario;
+                unset($_SESSION["usuarios"]);
+                $this->redireccionar("juego/status");
+            }
+        }
+
     }
 
 
@@ -161,10 +187,18 @@ class JuegoController
 
     }
 
+    // Métodos solo para desarrollo
+    public function resetPartidasJugadas () {
+        $idUsuario = $_SESSION["usuario"]["id"];
+        $this->model->resetPartidasDelUsuario($idUsuario);
+        $this->redireccionar("juego/status");
+    }
+
     public function resetRespondidasDelUsuario()
     {
         $idUsuario = $_SESSION["usuario"]["id"];
         $this->model->resetUsuario_Pregunta($idUsuario);
+        $this->redireccionar("juego/status");
     }
 
     /** Valida si la respuesta es de la pregunta y si la respuesta es correcta.
