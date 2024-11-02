@@ -18,43 +18,22 @@ class JuegoModel
 
         shuffle($data["respuestas"]); // delegar despues
 
-        $this->insertPartida((int)$idUsuario);
+        $idPartida = $this->insertPartida((int)$idUsuario);
+        $data["idPartida"] = $idPartida;
+
+        return $data;
+    }
+
+    public function continuar ($idUsuario, $idPartida): array {
+        $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
+        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
+
+        shuffle($data["respuestas"]); // delegar despues
+
         return $data;
     }
 
 
-    public function getPreguntas1()
-    {
-        $q = "SELECT *
-              FROM pregunta";
-        $result = $this->database->query($q, 'MULTIPLE', []);
-        if ($result["success"]) {
-            return $result["data"];
-        }
-        return $result;
-    }
-
-    public function getRespuestas()
-    {
-        $q = "SELECT *
-              FROM respuesta";
-        $result = $this->database->query($q, 'MULTIPLE', []);
-        if ($result["success"]) {
-            return $result["data"];
-        }
-        return $result;
-    }
-
-    public function getCategorias()
-    {
-        $q = "SELECT *
-              FROM categoria";
-        $result = $this->database->query($q, 'MULTIPLE', []);
-        if ($result["success"]) {
-            return $result["data"];
-        }
-        return $result;
-    }
 
     public function getRespuestasDePreguntaTest($id)
     {
@@ -148,18 +127,43 @@ class JuegoModel
 
     // CONSULTAS A LA BASE DE DATOS
 
+    public function getCategorias()
+    {
+        $q = "SELECT *
+              FROM categoria";
+        $result = $this->database->query($q, 'MULTIPLE', []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
+    public function getRanking () {
+        $q = "SELECT p.id, u.username as jugador_id, p.puntaje
+              FROM partida p
+              JOIN usuario u ON p.jugador_id = u.id";
+        $result = $this->database->query($q, 'MULTIPLE', []);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return $result;
+        }
+    }
+
     /** Crear nueva partida.
      * @param $idUsuario
      * @return mixed
      */
     public function insertPartida($idUsuario): mixed
     {
-        $q = "INSERT INTO partida (jugador_id) VALUES (:id)";
+        $q = "INSERT INTO partida (jugador_id, puntaje) VALUES (:id,0)";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
         $result = $this->database->query($q, 'INSERT', $params);
-        return $result["success"];
+        if ($result["success"]) {
+            return $this->database->getUltimoIdGenerado();
+        } else return false;
     }
 
     /** Obtener partidas de un usuario por id.
@@ -231,30 +235,32 @@ class JuegoModel
         return false;
     }
 
-    public function guardarRespuesta($idUsuario, $idPregunta, $state): void
+    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
     {
         $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
+        
         if ($state && $result) {
             // correcta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, 10);
+            $result = $this->updatePartida($idUsuario, $idPartida, 10);
         } else if (!$state && $result) {
             // incorrecta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, 0);
+            $result = $this->updatePartida($idUsuario, $idPartida, 0);
         } else {
             // aca no debería entrar
         }
-
+        return $result;
     }
 
-    private function updatePartida($idUsuario, $puntos)
+    private function updatePartida($idUsuario, $idPartida, $puntos)
     {
         $puntos = (int)$puntos;
         $q = "UPDATE partida
               SET puntaje = puntaje + :puntaje
-              WHERE jugador_id = :id";
+              WHERE jugador_id = :id AND id = :partidaId";
         $params = [
             ["columna" => "id", "valor" => $idUsuario],
             ["columna" => "puntaje", "valor" => $puntos],
+            ["columna" => "partidaId", "valor" => $idPartida],
         ];
         $result = $this->database->query($q, 'UPDATE', $params);
         return $result["success"];

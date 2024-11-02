@@ -43,7 +43,9 @@ class JuegoController
             $this->presenter->show("error", $data);
             return;
         }
+
         $juego = $this->model->empezar($usuarioActual["id"]);
+        $_SESSION["idPartida"] = $juego["idPartida"];
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
@@ -73,7 +75,8 @@ class JuegoController
             $_SESSION["puntaje"] = 0;
         }
 
-        $juego = $this->model->empezar($usuarioActual["id"]);
+        $idPartida = $_SESSION["idPartida"];
+        $juego = $this->model->continuar($usuarioActual["id"], $idPartida);
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
@@ -107,7 +110,8 @@ class JuegoController
             "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
             "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
-            "usuarios" => $_SESSION["usuarios"]
+            "usuarios" => $_SESSION["usuarios"],
+            "ranking" => $this->model->getRanking()
         ];
         $this->presenter->show("admin", $data);
     }
@@ -132,6 +136,7 @@ class JuegoController
     // Método de validación
     // Guarda puntaje y contador
     // Guarda como fue respondida la pregunta // in progress...
+    // TODO: sacar if's del controlador y mandarlos al modelo
     public function validarRespuesta()
     {
         // Valido ingreso por $_POST
@@ -167,10 +172,12 @@ class JuegoController
             return;
         }
 
+        $idPartida = $_SESSION["idPartida"];
+
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
         $result = $this->model->guardarRespuesta(
-            $idUsuario, $preguntaId, true
+            $idUsuario, $preguntaId, $idPartida, true
         );
 
         if ($result) {
@@ -178,7 +185,6 @@ class JuegoController
                 "pregunta" => $pregunta["texto"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
-
             ];
             $this->presenter->show("despuesDePregunta", $data);
         } else {
