@@ -138,10 +138,28 @@ class JuegoModel
         return $result;
     }
 
-    public function getRanking () {
+    public function getPartidas () {
         $q = "SELECT p.id, u.username as jugador_id, p.puntaje
               FROM partida p
               JOIN usuario u ON p.jugador_id = u.id";
+        $result = $this->database->query($q, 'MULTIPLE', []);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return $result;
+        }
+    }
+
+    public function getRanking () {
+        $q = "SELECT 
+                    u.username, 
+                    u.id AS usuario_id,
+                    MAX(p.puntaje) AS puntaje_maximo
+              FROM partida p
+              JOIN usuario u ON p.jugador_id = u.id
+              GROUP BY p.jugador_id
+              ORDER BY puntaje_maximo DESC
+              LIMIT 10";
         $result = $this->database->query($q, 'MULTIPLE', []);
         if ($result["success"]) {
             return $result["data"];
@@ -238,7 +256,7 @@ class JuegoModel
     public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
     {
         $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
-        
+
         if ($state && $result) {
             // correcta y salio bien el insert
             $result = $this->updatePartida($idUsuario, $idPartida, 10);

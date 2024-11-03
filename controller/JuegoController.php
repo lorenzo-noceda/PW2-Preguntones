@@ -111,6 +111,7 @@ class JuegoController
             "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
             "usuarios" => $_SESSION["usuarios"],
+            "partidasJugadas" => $this->model->getPartidas(),
             "ranking" => $this->model->getRanking()
         ];
         $this->presenter->show("admin", $data);
@@ -125,7 +126,7 @@ class JuegoController
                 $usuario["verificado"] = true;
                 $_SESSION["usuario"] = $usuario;
                 unset($_SESSION["usuarios"]);
-                $this->redireccionar("juego/status");
+                $this->redireccionar("home");
             }
         }
 
@@ -145,6 +146,8 @@ class JuegoController
         $preguntaId = $parametros["pregunta_id"];
         $respuestaElegidaId = $parametros["respuesta_id"];
         $idUsuario = $_SESSION["usuario"]["id"];
+        $idPartida = $_SESSION["idPartida"];
+
 
         $maximasCorrectas = 5;
 
@@ -166,13 +169,12 @@ class JuegoController
         } else {
             // Si responde mal se termina
             $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], false
+                $idUsuario, $pregunta["id"], $idPartida, false
             );
             $this->finalizarJuego();
             return;
         }
 
-        $idPartida = $_SESSION["idPartida"];
 
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
