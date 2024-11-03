@@ -35,6 +35,13 @@ class HomeController
         }
     }
 
+    public function usuario () {
+        $idUsuario = $_GET["id"];
+        $usuarioBuscado = $this->model->getUsuarioPorId($idUsuario);
+        $data["usuario"] = $usuarioBuscado;
+        $this->presenter->show("otroUsuarioPerfil", $data);
+    }
+
     /**
      * @param $ruta
      * @return void

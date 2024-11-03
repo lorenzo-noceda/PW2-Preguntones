@@ -43,7 +43,9 @@ class JuegoController
             $this->presenter->show("error", $data);
             return;
         }
+
         $juego = $this->model->empezar($usuarioActual["id"]);
+        $_SESSION["idPartida"] = $juego["idPartida"];
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
@@ -73,7 +75,8 @@ class JuegoController
             $_SESSION["puntaje"] = 0;
         }
 
-        $juego = $this->model->empezar($usuarioActual["id"]);
+        $idPartida = $_SESSION["idPartida"];
+        $juego = $this->model->continuar($usuarioActual["id"], $idPartida);
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
@@ -91,14 +94,42 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
 
+        $cantidadDePartidas = $this->model->getPartidasDelUsuario($usuarioActual["id"]);
+        if (empty($cantidadDePartidas)) {
+            $cantidadDePartidas = 0;
+        } else {
+            $cantidadDePartidas = count($cantidadDePartidas);
+        }
+
+        $_SESSION["usuarios"] = $this->model->getUsuariosTest();
+
         $data = [
             "texto" => "Hola mundo",
             "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
             "todas" => $this->model->getCantidadPreguntasBD(),
             "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
             "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
+            "partidas" => $cantidadDePartidas,
+            "usuarios" => $_SESSION["usuarios"],
+            "partidasJugadas" => $this->model->getPartidas(),
+            "ranking" => $this->model->getRanking()
         ];
         $this->presenter->show("admin", $data);
+    }
+
+    public function cambiarPerfil()
+    {
+        $id = $_GET["id"];
+        $usuarios =  $_SESSION["usuarios"];
+        foreach ($usuarios as $usuario) {
+            if ($usuario["id"] == $id) {
+                $usuario["verificado"] = true;
+                $_SESSION["usuario"] = $usuario;
+                unset($_SESSION["usuarios"]);
+                $this->redireccionar("home");
+            }
+        }
+
     }
 
 
@@ -106,6 +137,7 @@ class JuegoController
     // Método de validación
     // Guarda puntaje y contador
     // Guarda como fue respondida la pregunta // in progress...
+    // TODO: sacar if's del controlador y mandarlos al modelo
     public function validarRespuesta()
     {
         // Valido ingreso por $_POST
@@ -114,6 +146,8 @@ class JuegoController
         $preguntaId = $parametros["pregunta_id"];
         $respuestaElegidaId = $parametros["respuesta_id"];
         $idUsuario = $_SESSION["usuario"]["id"];
+        $idPartida = $_SESSION["idPartida"];
+
 
         $maximasCorrectas = 5;
 
@@ -135,16 +169,17 @@ class JuegoController
         } else {
             // Si responde mal se termina
             $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], false
+                $idUsuario, $pregunta["id"], $idPartida, false
             );
             $this->finalizarJuego();
             return;
         }
 
+
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
         $result = $this->model->guardarRespuesta(
-            $idUsuario, $preguntaId, true
+            $idUsuario, $preguntaId, $idPartida, true
         );
 
         if ($result) {
@@ -152,7 +187,6 @@ class JuegoController
                 "pregunta" => $pregunta["texto"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
-
             ];
             $this->presenter->show("despuesDePregunta", $data);
         } else {
@@ -161,10 +195,18 @@ class JuegoController
 
     }
 
+    // Métodos solo para desarrollo
+    public function resetPartidasJugadas () {
+        $idUsuario = $_SESSION["usuario"]["id"];
+        $this->model->resetPartidasDelUsuario($idUsuario);
+        $this->redireccionar("juego/status");
+    }
+
     public function resetRespondidasDelUsuario()
     {
         $idUsuario = $_SESSION["usuario"]["id"];
         $this->model->resetUsuario_Pregunta($idUsuario);
+        $this->redireccionar("juego/status");
     }
 
     /** Valida si la respuesta es de la pregunta y si la respuesta es correcta.
