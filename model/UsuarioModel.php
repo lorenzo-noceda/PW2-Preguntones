@@ -4,16 +4,29 @@ class UsuarioModel
 {
     private $database;
     private $mailPresenter;
+    private $qrGenerator;
+    const urlParaQR = 'https://localhost/PW2-Preguntones/perfil/verPerfilUsuario?id=';
 
-//    const string ERROR_REGISTRO_USUARIO = 'No se pudo registrar al usuario';
-//    const string ERROR_REGISTRO_JUGADOR = 'No se pudo registrar al jugador';
-//    const string SUCCESS_REGISTRO = 'Jugador registrado correctamente';
-
-    public function __construct($database, $mailPresenter)
+    public function __construct($database, $mailPresenter, $qrGenerator)
     {
         $this->database = $database;
         $this->mailPresenter = $mailPresenter;
+        $this->qrGenerator = $qrGenerator;
     }
+
+    public function buscarUsuarioPorId($idUsuario, $conPartidas)
+    {
+        $usuarioBuscado = $this->getUsuarioPorId($idUsuario);
+        $urlParaGenerarQr = self::urlParaQR . $usuarioBuscado["id"];
+        $usuarioBuscado["qr"] =
+            $this->qrGenerator::getQrCodeParaImg($urlParaGenerarQr);
+        if ($conPartidas) {
+            $usuarioBuscado["partidas"] = $this->getPartidasDelUsuario($idUsuario);
+            $usuarioBuscado["puntajeAcumulado"] = $this->getPuntajeAcumuladoDeUnUsuario($idUsuario)["puntaje_acumulado"];
+        }
+        return $usuarioBuscado;
+    }
+
 
     public function guardarJugador($usuario)
     {
@@ -37,7 +50,8 @@ class UsuarioModel
         return $this->database->query($query, 'INSERT', $params);
     }
 
-    public function enviarMailValidacion($emailUsuario, $nombreUsuario){
+    public function enviarMailValidacion($emailUsuario, $nombreUsuario)
+    {
         $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
         $this->mailPresenter->setSubject('Confirmación de registro');
         $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
@@ -91,6 +105,66 @@ class UsuarioModel
         return $this->database->getUltimoIdGenerado();
     }
 
+
+
+
+    // Consultas a la base de datos
+
+    public function getRanking () {
+        $q = "SELECT 
+                    u.username, 
+                    u.id AS usuario_id,
+                    MAX(p.puntaje) AS puntaje_maximo
+              FROM partida p
+              JOIN usuario u ON p.jugador_id = u.id
+              GROUP BY p.jugador_id
+              ORDER BY puntaje_maximo DESC
+              LIMIT 10";
+        $result = $this->database->query($q, 'MULTIPLE', []);
+        if ($result["success"]) {
+            return $result["data"];
+        } else {
+            return $result;
+        }
+    }
+
+    /** Obtener la suma del puntaje obtenido en todas sus partidas jugadas.
+     * @param $idUsuario
+     * @return mixed
+     */
+    public function getPuntajeAcumuladoDeUnUsuario($idUsuario): mixed
+    {
+        $q = "SELECT SUM(puntaje) AS puntaje_acumulado 
+              FROM partida
+              WHERE jugador_id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'SINGLE', $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
+    /** Obtener partidas de un usuario por id.
+     * @param $idUsuario
+     * @return mixed
+     */
+    public function getPartidasDelUsuario($idUsuario): mixed
+    {
+        $q = "SELECT * FROM partida
+              WHERE jugador_id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'MULTIPLE', $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
     public function getSexos()
     {
         $q = 'SELECT * FROM sexo';
@@ -102,12 +176,9 @@ class UsuarioModel
         }
     }
 
-    // Consultas a la base de datos
-
-
-
-    public function getSexosMenosElDelUsuario ($sexoUsuario) {
-        $query= "SELECT * FROM sexo
+    public function getSexosMenosElDelUsuario($sexoUsuario)
+    {
+        $query = "SELECT * FROM sexo
                  WHERE nombre != :sexo";
         $params = [
             ["columna" => "sexo", "valor" => $sexoUsuario]
@@ -160,11 +231,19 @@ class UsuarioModel
         return $this->database->query($query, 'INSERT', $params);
     }
 
+
     public function getUsuarioPorId($id)
     {
         if ($id != null) {
             $q = "
-            SELECT u.*, 
+            SELECT u.id,
+                   u.nombre,
+                   u.apellido,
+                   u.username,
+                   u.email,
+                   u.anio_nacimiento,
+                   u.foto_perfil,
+                   u.fecha_registro,
                    c.nombre AS ciudad, 
                    p.nombre AS pais,
                    s.id AS sexoId, s.nombre AS sexoNombre 
@@ -244,6 +323,7 @@ class UsuarioModel
         $data["success"] = empty($error);
         return $data;
     }
+
     public function existeYaElUsuario($username): bool
     {
         return $this->getUsuarioPorUsername($username) != null;
@@ -253,9 +333,6 @@ class UsuarioModel
     {
         return $this->getUsuarioPorCorreo($correo) != null;
     }
-
-
-
 
 
 }

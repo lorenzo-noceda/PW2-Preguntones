@@ -1,8 +1,19 @@
-.qrImageContainer {
-    width: 100px;
+th, td {
+    text-align: center;
 }
 
-.qrImageContainer img {
+.userUbicationContainer  {
+    width: 1.5rem !important;
+}
+
+.userUbicationContainer img {
     width: 100%;
 }
 
+.userImageContainer {
+    width: 3rem !important;
+}
+
+.lineaSeparadora {
+    border-left: 0.5px solid rgba(255, 255, 255, 0.5);
+}

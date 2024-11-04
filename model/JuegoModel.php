@@ -18,7 +18,6 @@ class JuegoModel
 
         shuffle($data["respuestas"]); // delegar despues
 
-
         $idPartida = $this->insertPartida((int)$idUsuario);
         $data["idPartida"] = $idPartida;
 
@@ -372,14 +371,14 @@ class JuegoModel
 
     private function eliminarPreguntasRespondidasDelUsuario($idUsuario)
     {
-        $q = "DELETE FROM usuario_pregunta up
-              WHERE up.usuario_id = :id";
+        $q = "DELETE FROM usuario_pregunta
+              WHERE usuario_id = :id";
 
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
 
-        return $this->database->query($q, 'MULTIPLE', $params);
+        return $this->database->query($q, 'DELETE', $params);
     }
 
     // helpers de clase

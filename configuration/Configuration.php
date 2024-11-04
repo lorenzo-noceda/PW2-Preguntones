@@ -35,42 +35,53 @@ class Configuration
     }
 
     // Controllers
-    public function getUsuarioController(){
+    public function getUsuarioController()
+    {
         return new UsuarioController($this->getUsuarioModel(), $this->getPresenter());
     }
-    public function getHomeController(){
+
+    public function getHomeController()
+    {
         return new HomeController(
             $this->getUsuarioModel(),
             $this->getPresenter(),
-            $this->getQrCodeGenerator()
         );
     }
-    public function getRegistroController(){
+
+    public function getRegistroController()
+    {
         return new RegistroController($this->getUsuarioModel(), $this->getPresenter(), $this->getPaisYCiudadModel());
     }
-    public function getLoginController(){
+
+    public function getLoginController()
+    {
         return new LoginController($this->getUsuarioModel(), $this->getPresenter());
     }
-    public function getPerfilController(){
+
+    public function getPerfilController()
+    {
         return new PerfilController(
             $this->getUsuarioModel(),
             $this->getPaisYCiudadModel(),
             $this->getPresenter());
     }
 
-    public function getJuegoController(){
+    public function getJuegoController()
+    {
         return new JuegoController(
             $this->getJuegoModel(),
             $this->getPresenter());
     }
 
 
-
-
     // Modelos
     private function getUsuarioModel()
     {
-        return new UsuarioModel($this->getDatabase(), $this->getMailPresenter());
+        return new UsuarioModel(
+            $this->getDatabase(),
+            $this->getMailPresenter(),
+            $this->getQrCodeGenerator()
+        );
     }
 
     private function getPaisYCiudadModel()
@@ -84,10 +95,11 @@ class Configuration
     }
 
     // Helpers
-    private function getQrCodeGenerator (): QRCodeGenerator
+    private function getQrCodeGenerator(): QRCodeGenerator
     {
         return new QRCodeGenerator();
     }
+
     private function getDatabase()
     {
         $config = parse_ini_file("config.ini");

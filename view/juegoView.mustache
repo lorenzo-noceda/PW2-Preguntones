@@ -16,13 +16,12 @@
 <body>
 <header class="col-12 bg-primary text-white styledHeader">
     <nav class="col-10 col-md-5 col-xl-4 d-flex mx-auto align-items-center">
-        <!--        <div class="hambugerContainer">-->
-        <!--            <img src="/PW2-Preguntones/public/images/hamburger.png"/>-->
-        <!--        </div>-->
-        <a href="/PW2-Preguntones/login/cerrarSesion"
-           class="col-3 d-flex justify-content-start text-decoration-none">
-            <button class="btn btn-danger">Cerrar sesión</button>
-        </a>
+        <div class="col-3 d-flex justify-content-start">
+            <a href="/PW2-Preguntones/login/cerrarSesion"
+               class="text-decoration-none btn-sm btn-danger btn">
+                Cerrar sesión
+            </a>
+        </div>
         <a href="/PW2-Preguntones/home"
            class="text-white text-decoration-none col-6 d-flex justify-content-center">
             <h3>Preguntones</h3>
@@ -34,13 +33,14 @@
         </div>
     </nav>
 </header>
-<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4 d-flex flex-column gap-2 mx-auto">
+<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
+             d-flex flex-column gap-2 mx-auto p-2">
     <h1 class="text-center">¡Hora de jugar {{nombre}}!</h1>
     <div class="col-12 d-flex flex-column gap-2">
         <!--   PREGUNTA     -->
-        <div class="text-center col-12 py-5 fs-4 fw-semibold bg-dark-subtle rounded-4">
+        <div class="text-center py-5 px-3 fs-4 fw-semibold bg-dark-subtle rounded-4 mt-2">
             {{#pregunta}}
-                <p class="m-0 p-0">{{pregunta_str}}</p>
+                <p class="m-0 p-0 preguntaTexto">{{pregunta_str}}</p>
             {{/pregunta}}
         </div>
         <!--   RESPUESTAS     -->
