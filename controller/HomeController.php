@@ -47,7 +47,7 @@ class HomeController
         $usuarioBuscado["qr"] = $this->qrCodeGenerator::getQrCodeParaImg($urlParaQR);
 
         $data["usuario"] = $usuarioBuscado;
-        
+
         $this->presenter->show("otroUsuarioPerfil", $data);
     }
 
