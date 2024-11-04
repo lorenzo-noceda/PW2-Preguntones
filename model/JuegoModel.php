@@ -353,8 +353,10 @@ class JuegoModel
             ["columna" => "id", "valor" => $idUsuario]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
-        if ($result["success"]) {
+        if ($result["success"] && !empty($result["data"])) {
             return $result["data"];
+        } elseif($result["success"]){
+            return $this->resetearPreguntasRespondidasDelUsuario($idUsuario);
         }
         return $result;
     }
