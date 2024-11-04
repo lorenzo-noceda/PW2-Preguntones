@@ -3,18 +3,25 @@
 class UsuarioModel
 {
     private $database;
+    private $mailPresenter;
+
 //    const string ERROR_REGISTRO_USUARIO = 'No se pudo registrar al usuario';
 //    const string ERROR_REGISTRO_JUGADOR = 'No se pudo registrar al jugador';
 //    const string SUCCESS_REGISTRO = 'Jugador registrado correctamente';
 
-    public function __construct($database)
+    public function __construct($database, $mailPresenter)
     {
         $this->database = $database;
+        $this->mailPresenter = $mailPresenter;
     }
 
-    public function guardarJugador()
+    public function guardarJugador($usuario)
     {
         $id = $this->getUltimoIdGenerado();
+
+        $emailUsuario = $usuario['email'];
+        $nombreUsuario = $usuario['nombre'];
+
         $query = "
                 INSERT INTO jugador
                     (id, verificado)
@@ -22,9 +29,26 @@ class UsuarioModel
                     (:id, :verificado)";
         $params = [
             ["columna" => "id", "valor" => $id],
-            ["columna" => "verificado", "valor" => false],
+            ["columna" => "verificado", "valor" => 0],
         ];
+
+        $this->enviarMailValidacion($emailUsuario, $nombreUsuario);
+
         return $this->database->query($query, 'INSERT', $params);
+    }
+
+    public function enviarMailValidacion($emailUsuario, $nombreUsuario){
+        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
+        $this->mailPresenter->setSubject('Confirmación de registro');
+        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
+
+        try {
+            if ($this->mailPresenter->sendEmail()) {
+                echo 'El correo ha sido enviado';
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 
     public function getVerificacionDeUsuario($idusuario)
@@ -229,6 +253,8 @@ class UsuarioModel
     {
         return $this->getUsuarioPorCorreo($correo) != null;
     }
+
+
 
 
 
