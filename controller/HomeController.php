@@ -5,13 +5,11 @@ class HomeController
 
     private $model;
     private $presenter;
-    private $qrCodeGenerator;
 
-    public function __construct($model, $presenter, $qrCodeGenerator)
+    public function __construct($model, $presenter)
     {
         $this->model = $model;
         $this->presenter = $presenter;
-        $this->qrCodeGenerator = $qrCodeGenerator;
     }
 
     public function list(): void
@@ -37,16 +35,9 @@ class HomeController
         }
     }
 
-    public function usuario () {
-        $idUsuario = $_GET["id"];
-        $usuarioBuscado = $this->model->getUsuarioPorId($idUsuario);
-
-        $urlParaQR = "/PW2-Preguntones/usuario?id=" . $idUsuario;
-        $_SESSION["qrParaGenerar"] = $urlParaQR;
-        $usuarioBuscado["qr"] = $this->qrCodeGenerator::getQrCodeParaImg($urlParaQR);
-
-        $data["usuario"] = $usuarioBuscado;
-        $this->presenter->show("otroUsuarioPerfil", $data);
+    public function ranking () {
+        $data["ranking"] = $this->model->getRanking();
+        $this->presenter->show("ranking", $data);
     }
 
     public function generarQr() {

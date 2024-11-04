@@ -359,6 +359,24 @@ class JuegoModel
         return $result;
     }
 
+    private function resetearPreguntasRespondidasDelUsuario($idUsuario)
+    {
+        $this->eliminarPreguntasRespondidasDelUsuario($idUsuario);
+        return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+    }
+
+    private function eliminarPreguntasRespondidasDelUsuario($idUsuario)
+    {
+        $q = "DELETE FROM usuario_pregunta
+              WHERE usuario_id = :id";
+
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+
+        return $this->database->query($q, 'DELETE', $params);
+    }
+
     // helpers de clase
     private function verVariable($data): void
     {

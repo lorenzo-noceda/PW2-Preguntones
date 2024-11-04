@@ -18,11 +18,18 @@ class PerfilController
     {
         $this->validarUsuario();
         $id = $_GET["id"] ?? null;
-        $data["usuario"] = $this->usuarioModel->getUsuarioPorId($id);
+        $data["usuario"] = $this->usuarioModel->buscarUsuarioPorId($id, true);
         $this->presenter->show("perfil", $data);
     }
 
+    public function verPerfilUsuario () {
+        $this->validarUsuario();
+        $id = $_GET["id"] ?? null;
+        $data["usuario"] = $this->usuarioModel->buscarUsuarioPorId($_SESSION["usuario"]["id"], true);
+        $data["usuarioBuscado"] = $this->usuarioModel->buscarUsuarioPorId($id, true);
+        $this->presenter->show("otroUsuarioPerfil", $data);
 
+    }
 
     public function editar()
     {
@@ -46,6 +53,8 @@ class PerfilController
         }
     }
 
+    // Helpers de clase
+
     /**
      * @param $ruta
      * @return void
@@ -54,5 +63,10 @@ class PerfilController
     {
         header("Location: /PW2-preguntones/$ruta");
         exit();
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre>' . print_r($data, true) . '</pre>';
     }
 }

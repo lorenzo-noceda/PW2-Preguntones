@@ -6,9 +6,14 @@ class QRCodeGenerator
     public static function getQrCodeParaImg($string)
     {
         $generator = new barcode_generator();
+        $options = [
+            'bc' => '#00FF0000',
+            'cs' => '#FFFFFF', // espacios blancos
+            'cm' => '#0d6efd', // módulos negros
+            'ms' => 'r'
+        ];
         header('Content-type: svg+xml');
-        $svg = $generator->render_svg("qr", $string, "");
-        return $svg;
+        return $generator->render_svg("qr", $string, $options);
     }
 
 
