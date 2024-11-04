@@ -18,6 +18,7 @@ class JuegoModel
 
         shuffle($data["respuestas"]); // delegar despues
 
+
         $idPartida = $this->insertPartida((int)$idUsuario);
         $data["idPartida"] = $idPartida;
 
@@ -253,7 +254,7 @@ class JuegoModel
         return false;
     }
 
-    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
+    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida, $state)
     {
         $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
 
@@ -353,10 +354,32 @@ class JuegoModel
             ["columna" => "id", "valor" => $idUsuario]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
-        if ($result["success"]) {
+
+        if ($result["success"] && !empty($result["data"])) {
             return $result["data"];
+        } elseif($result["success"]){
+            return $this->resetearPreguntasRespondidasDelUsuario($idUsuario);
         }
+
         return $result;
+    }
+
+    private function resetearPreguntasRespondidasDelUsuario($idUsuario)
+    {
+        $this->eliminarPreguntasRespondidasDelUsuario($idUsuario);
+        return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+    }
+
+    private function eliminarPreguntasRespondidasDelUsuario($idUsuario)
+    {
+        $q = "DELETE FROM usuario_pregunta up
+              WHERE up.usuario_id = :id";
+
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+
+        return $this->database->query($q, 'MULTIPLE', $params);
     }
 
     // helpers de clase
@@ -364,5 +387,7 @@ class JuegoModel
     {
         echo '<pre>' . print_r($data, true) . '</pre>';
     }
+
+
 
 }

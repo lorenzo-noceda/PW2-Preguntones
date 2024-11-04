@@ -4,7 +4,11 @@ include_once(__DIR__ . "/../helper/IncludeFilePresenter.php");
 include_once(__DIR__ . "/../helper/Router.php");
 include_once(__DIR__ . "/../helper/MustachePresenter.php");
 include_once(__DIR__ . "/../helper/Database.php");
+
+include_once(__DIR__ . "/../helper/QRCode.php   ");
+
 include_once(__DIR__ . "/../helper/MailPresenter.php");
+
 
 // Controllers
 include_once(__DIR__ . "/../controller/UsuarioController.php");
@@ -20,9 +24,13 @@ include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
 include_once(__DIR__ . "/../model/JuegoModel.php");
 
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
+
+include_once(__DIR__ . '/../vendor/phpqrcode/qrlib.php');
+
 include_once(__DIR__ . '/../vendor/PHPMailer/src/Exception.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/PHPMailer.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/SMTP.php');
+
 
 class Configuration
 {
@@ -76,6 +84,9 @@ class Configuration
     }
 
     // Helpers
+    private function getQrCode () {
+        return new QRCode();
+    }
     private function getDatabase()
     {
         $config = parse_ini_file("config.ini");
