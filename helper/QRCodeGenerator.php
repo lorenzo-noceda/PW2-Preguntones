@@ -1,8 +1,5 @@
 <?php
 
-require_once(__DIR__ . '/../vendor/phpqrcode/qrlib.php');
-
-
 class QRCodeGenerator
 {
 
