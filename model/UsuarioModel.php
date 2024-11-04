@@ -102,6 +102,10 @@ class UsuarioModel
         }
     }
 
+    // Consultas a la base de datos
+
+
+
     public function getSexosMenosElDelUsuario ($sexoUsuario) {
         $query= "SELECT * FROM sexo
                  WHERE nombre != :sexo";
