@@ -38,20 +38,6 @@ class HomeController
     public function usuario () {
         $idUsuario = $_GET["id"];
         $usuarioBuscado = $this->model->getUsuarioPorId($idUsuario);
-
-        $contenidoQR = "https://example.com/perfil/" . $idUsuario;
-
-        // Captura el flujo de salida en lugar de enviar la imagen directamente
-        ob_start();
-        QRcode::png($contenidoQR, null, QR_ECLEVEL_L, 10, 2);
-        $imageData = ob_get_contents();
-        ob_end_clean();
-
-        // Convierte el flujo de salida en una URL de datos
-        $qrCodeDataUrl = 'data:image/png;base64,' . base64_encode($imageData);
-
-
-        $usuarioBuscado["qr"] =
         $data["usuario"] = $usuarioBuscado;
         $this->presenter->show("otroUsuarioPerfil", $data);
     }
