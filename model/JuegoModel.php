@@ -253,7 +253,7 @@ class JuegoModel
         return false;
     }
 
-    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida, $state)
+    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
     {
         $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
 
@@ -353,13 +353,9 @@ class JuegoModel
             ["columna" => "id", "valor" => $idUsuario]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
-
-        if ($result["success"] && !empty($result["data"])) {
+        if ($result["success"]) {
             return $result["data"];
-        } elseif($result["success"]){
-            return $this->resetearPreguntasRespondidasDelUsuario($idUsuario);
         }
-
         return $result;
     }
 
@@ -386,7 +382,5 @@ class JuegoModel
     {
         echo '<pre>' . print_r($data, true) . '</pre>';
     }
-
-
 
 }
