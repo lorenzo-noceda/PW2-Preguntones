@@ -25,7 +25,8 @@ class PerfilController
     public function verPerfilUsuario () {
         $this->validarUsuario();
         $id = $_GET["id"] ?? null;
-        $data["usuario"] = $this->usuarioModel->buscarUsuarioPorId($id, true);
+        $data["usuario"] = $this->usuarioModel->buscarUsuarioPorId($_SESSION["usuario"]["id"], true);
+        $data["usuarioBuscado"] = $this->usuarioModel->buscarUsuarioPorId($id, true);
         $this->presenter->show("otroUsuarioPerfil", $data);
 
     }

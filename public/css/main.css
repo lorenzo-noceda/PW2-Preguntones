@@ -58,7 +58,26 @@ main {
 }
 
 
-
 .userImageContainer img {
     width: 100%;
+}
+
+th, td {
+    text-align: center;
+}
+
+.userUbicationContainer  {
+    width: 1.5rem !important;
+}
+
+.userUbicationContainer img {
+    width: 100%;
+}
+
+.userImageContainer {
+    width: 3rem !important;
+}
+
+.lineaSeparadora {
+    border-left: 0.5px solid rgba(255, 255, 255, 0.5);
 }
