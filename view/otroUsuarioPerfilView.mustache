@@ -36,7 +36,8 @@
     </header>
 {{/usuario}}
 {{#usuarioBuscado}}
-<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4 mx-auto py-4 text-white d-flex flex-column gap-4">
+<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-4
+            mx-auto py-4 text-white d-flex flex-column gap-4">
     <!-- TARJETA USUARIO   -->
     <div class="col-12 p-4 bg-primary d-flex flex-column gap-4">
         <!-- (IMAGEN USUARIO + UBICACIÓN) + PUNTAJES - ROW   -->
@@ -72,7 +73,7 @@
         </div>
         <!--   QR-->
         <div class="d-flex align-items-center justify-content-center">
-            <div class="qrImageContainer bg-primary-subtle">
+            <div class="bg-primary-subtle">
                 {{{qr}}}
             </div>
         </div>
@@ -82,8 +83,8 @@
     </a>
     <div class="col-12 bg-primary d-flex flex-column gap-3 p-3">
         <h2 class="m-0 p-0">Partidas</h2>
-        <div class="table-responsive">
-            <table class="col-8 mx-auto">
+        <div class="col-8 mx-auto">
+            <table class="table table-bordered table-striped table-hover">
                 <thead class="table-primary text-center">
                 <tr>
                     <th>Fecha</th>
