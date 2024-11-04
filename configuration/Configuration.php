@@ -4,11 +4,8 @@ include_once(__DIR__ . "/../helper/IncludeFilePresenter.php");
 include_once(__DIR__ . "/../helper/Router.php");
 include_once(__DIR__ . "/../helper/MustachePresenter.php");
 include_once(__DIR__ . "/../helper/Database.php");
-
-include_once(__DIR__ . "/../helper/QRCode.php   ");
-
+include_once(__DIR__ . "/../helper/QRCodeGenerator.php");
 include_once(__DIR__ . "/../helper/MailPresenter.php");
-
 
 // Controllers
 include_once(__DIR__ . "/../controller/UsuarioController.php");
@@ -24,8 +21,7 @@ include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
 include_once(__DIR__ . "/../model/JuegoModel.php");
 
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
-
-include_once(__DIR__ . '/../vendor/phpqrcode/qrlib.php');
+include_once(__DIR__ . '/../vendor/barcode-master/barcode.php');
 
 include_once(__DIR__ . '/../vendor/PHPMailer/src/Exception.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/PHPMailer.php');
@@ -43,7 +39,11 @@ class Configuration
         return new UsuarioController($this->getUsuarioModel(), $this->getPresenter());
     }
     public function getHomeController(){
-        return new HomeController($this->getUsuarioModel(), $this->getPresenter());
+        return new HomeController(
+            $this->getUsuarioModel(),
+            $this->getPresenter(),
+            $this->getQrCodeGenerator()
+        );
     }
     public function getRegistroController(){
         return new RegistroController($this->getUsuarioModel(), $this->getPresenter(), $this->getPaisYCiudadModel());
@@ -84,8 +84,9 @@ class Configuration
     }
 
     // Helpers
-    private function getQrCode () {
-        return new QRCode();
+    private function getQrCodeGenerator (): QRCodeGenerator
+    {
+        return new QRCodeGenerator();
     }
     private function getDatabase()
     {

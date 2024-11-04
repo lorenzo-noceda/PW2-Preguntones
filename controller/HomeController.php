@@ -5,11 +5,13 @@ class HomeController
 
     private $model;
     private $presenter;
+    private $qrCodeGenerator;
 
-    public function __construct($model, $presenter)
+    public function __construct($model, $presenter, $qrCodeGenerator)
     {
         $this->model = $model;
         $this->presenter = $presenter;
+        $this->qrCodeGenerator = $qrCodeGenerator;
     }
 
     public function list(): void
@@ -39,21 +41,19 @@ class HomeController
         $idUsuario = $_GET["id"];
         $usuarioBuscado = $this->model->getUsuarioPorId($idUsuario);
 
-        $contenidoQR = "https://example.com/perfil/" . $idUsuario;
+        $urlParaQR = "/PW2-Preguntones/usuario?id=" . $idUsuario;
+        $_SESSION["qrParaGenerar"] = $urlParaQR;
 
-        // Captura el flujo de salida en lugar de enviar la imagen directamente
-        ob_start();
-        QRcode::png($contenidoQR, null, QR_ECLEVEL_L, 10, 2);
-        $imageData = ob_get_contents();
-        ob_end_clean();
+        $usuarioBuscado["qr"] = $this->qrCodeGenerator::getQrCodeParaImg($urlParaQR);
 
-        // Convierte el flujo de salida en una URL de datos
-        $qrCodeDataUrl = 'data:image/png;base64,' . base64_encode($imageData);
-
-
-        $usuarioBuscado["qr"] =
         $data["usuario"] = $usuarioBuscado;
+        
         $this->presenter->show("otroUsuarioPerfil", $data);
+    }
+
+    public function generarQr() {
+//        $qrParaGenerar = $_SESSION["qrParaGenerar"];
+//        $this->qrCodeGenerator::getQrCodeParaImg($qrParaGenerar);
     }
 
     /**
