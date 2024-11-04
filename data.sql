@@ -254,6 +254,10 @@ CREATE TABLE partida
     FOREIGN KEY (jugador_id) REFERENCES jugador (id)
 );
 
+-- 04/11/24
+ALTER TABLE partida
+    ADD COLUMN fecha_jugada TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
 
 
 
