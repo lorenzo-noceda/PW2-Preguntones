@@ -5,6 +5,7 @@ include_once(__DIR__ . "/../helper/Router.php");
 include_once(__DIR__ . "/../helper/MustachePresenter.php");
 include_once(__DIR__ . "/../helper/Database.php");
 include_once(__DIR__ . "/../helper/QRCodeGenerator.php");
+include_once(__DIR__ . "/../helper/MailPresenter.php");
 
 // Controllers
 include_once(__DIR__ . "/../controller/UsuarioController.php");
@@ -21,6 +22,11 @@ include_once(__DIR__ . "/../model/JuegoModel.php");
 
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
 include_once(__DIR__ . '/../vendor/barcode-master/barcode.php');
+
+include_once(__DIR__ . '/../vendor/PHPMailer/src/Exception.php');
+include_once(__DIR__ . '/../vendor/PHPMailer/src/PHPMailer.php');
+include_once(__DIR__ . '/../vendor/PHPMailer/src/SMTP.php');
+
 
 class Configuration
 {
@@ -64,7 +70,7 @@ class Configuration
     // Modelos
     private function getUsuarioModel()
     {
-        return new UsuarioModel($this->getDatabase());
+        return new UsuarioModel($this->getDatabase(), $this->getMailPresenter());
     }
 
     private function getPaisYCiudadModel()
@@ -102,6 +108,18 @@ class Configuration
     private function getPresenter()
     {
         return new MustachePresenter("./view");
+    }
+
+    private function getMailPresenter()
+    {
+        $config = parse_ini_file("config.ini");
+        return new MailPresenter(
+            $config["smtp_host"],
+            $config["smtp_email"],
+            $config["smtp_password"],
+            $config["smtp_name"],
+            $config["smtp_port"]
+        );
     }
 
 }

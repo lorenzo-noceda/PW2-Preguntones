@@ -39,7 +39,6 @@ class RegistroController
 
             // Validar campos (contraseñas, correo y username)
             $result = $this->usuarioModel->verificarCampos($usuario);
-
             var_dump($result);
 
             // Manejar error de validación
@@ -50,26 +49,26 @@ class RegistroController
 
             // Registrar usuario
             $resultadoUsuario = $this->usuarioModel->registrarUsuario($usuario);
-
             var_dump($resultadoUsuario["success"]);
 
             // Manejar error de registro
             if (!$resultadoUsuario['success']) {
-                $_SESSION["error"] = $result["message"];
+                $_SESSION["error"] = $resultadoUsuario["message"];
                 $this->redireccionar("registro");
             }
 
             // Guardamos jugador
-            $result = $this->usuarioModel->guardarJugador();
+            $resultJugador = $this->usuarioModel->guardarJugador($usuario);
+            var_dump($resultJugador);
 
             // Manejar error
-            if ($result["success"]) {
+            if ($resultJugador["success"]) {
                 $_SESSION["correoParaValidar"] = $usuario['email'];
                 $_SESSION["usuario"] = $this->usuarioModel->getUsuarioPorCorreo($usuario['email']);
                 $_SESSION["id_usuario"] = $resultadoUsuario["lastId"];
                 $this->redireccionar("registro/validarCorreo");
             } else {
-                $_SESSION["error"] = $result["message"];
+                $_SESSION["error"] = $resultJugador["message"];
                 $this->redireccionar("registro");
             }
         } else $this->redireccionar("registro");
