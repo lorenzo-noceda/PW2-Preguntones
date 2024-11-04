@@ -43,11 +43,9 @@ class HomeController
 
         $urlParaQR = "/PW2-Preguntones/usuario?id=" . $idUsuario;
         $_SESSION["qrParaGenerar"] = $urlParaQR;
-
         $usuarioBuscado["qr"] = $this->qrCodeGenerator::getQrCodeParaImg($urlParaQR);
 
         $data["usuario"] = $usuarioBuscado;
-
         $this->presenter->show("otroUsuarioPerfil", $data);
     }
 

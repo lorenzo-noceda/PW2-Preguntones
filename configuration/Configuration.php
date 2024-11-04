@@ -23,10 +23,10 @@ include_once(__DIR__ . "/../model/JuegoModel.php");
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
 include_once(__DIR__ . '/../vendor/barcode-master/barcode.php');
 
+
 include_once(__DIR__ . '/../vendor/PHPMailer/src/Exception.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/PHPMailer.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/SMTP.php');
-
 
 class Configuration
 {
@@ -84,10 +84,12 @@ class Configuration
     }
 
     // Helpers
+
     private function getQrCodeGenerator (): QRCodeGenerator
     {
         return new QRCodeGenerator();
     }
+
     private function getDatabase()
     {
         $config = parse_ini_file("config.ini");
