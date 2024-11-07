@@ -52,7 +52,22 @@
                         <div class="userUbicationContainer">
                             <img src="/PW2-Preguntones/public/images/location.png" alt="Ubicacion Logo"/>
                         </div>
-                        <p class="m-0 p-0">{{ciudad}}, {{pais}}.</p>
+                        <div id="mapPerfil" style="width: 100%; height: 200px;"></div>
+
+                        <script>
+                            function initMapPerfil() {
+                                const userPosition = { lat: {{usuario.latitud}}, lng: {{usuario.longitud}} };
+                                const map = new google.maps.Map(document.getElementById("mapPerfil"), {
+                                    center: userPosition,
+                                    zoom: 10,
+                                });
+                                new google.maps.Marker({
+                                    position: userPosition,
+                                    map,
+                                });
+                            }
+                        </script>
+                        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc&callback=initMapPerfil" async defer></script>
                     </div>
                 </div>
                 <!--   PUNTAJE + PUESTO -->
