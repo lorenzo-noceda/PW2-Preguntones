@@ -201,9 +201,9 @@ class UsuarioModel
     {
         $query = "
                 INSERT INTO usuario
-                    (nombre, apellido, username, email, password, anio_nacimiento, id_sexo, id_ciudad)
+                    (nombre, apellido, username, email, password, anio_nacimiento, id_sexo, latitud, longitud)
                 VALUES 
-                    (:nombre, :apellido, :username, :email, :password, :anio_nacimiento, :id_sexo, :id_ciudad)";
+                    (:nombre, :apellido, :username, :email, :password, :anio_nacimiento, :id_sexo, :latitud, :longitud)";
         $params = [
             ["columna" => "nombre", "valor" => $usuario['nombre']],
             ["columna" => "apellido", "valor" => $usuario['apellido']],
@@ -212,7 +212,8 @@ class UsuarioModel
             ["columna" => "password", "valor" => $usuario['password']],
             ["columna" => "anio_nacimiento", "valor" => $usuario['anio_nacimiento']],
             ["columna" => "id_sexo", "valor" => $usuario['id_sexo']],
-            ["columna" => "id_ciudad", "valor" => $usuario['id_ciudad']],
+            ["columna" => "latitud", "valor" => $usuario['latitud']],
+            ["columna" => "longitud", "valor" => $usuario['longitud']]
         ];
 
         $result = $this->database->query($query, 'INSERT', $params);
@@ -244,13 +245,11 @@ class UsuarioModel
                    u.anio_nacimiento,
                    u.foto_perfil,
                    u.fecha_registro,
-                   c.nombre AS ciudad, 
-                   p.nombre AS pais,
+                   u.latitud,          
+                   u.longitud, 
                    s.id AS sexoId, s.nombre AS sexoNombre 
             FROM usuario u
             JOIN sexo s ON u.id_sexo = s.id
-            JOIN ciudad c ON u.id_ciudad = c.id
-            JOIN pais p ON c.id_pais = p.id
             WHERE u.id = :id";
             $params = [
                 ["columna" => "id", "valor" => $id],

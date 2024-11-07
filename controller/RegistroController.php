@@ -114,7 +114,8 @@ class RegistroController
             'password' => $_POST['password'],
             'anio_nacimiento' => $_POST['anio_nacimiento'],
             'id_sexo' => $_POST['id_sexo'],
-            'id_ciudad' => $_POST['id_ciudad'],
+            'latitud' => $_POST['latitud'],
+            'longitud' => $_POST['longitud'],
             "confirmPassword" => $_POST['confirmPassword'],
         ];
     }

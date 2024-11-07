@@ -76,19 +76,44 @@
         <!--   PAIS Y CIUDAD     -->
         <div class="row">
             <div class="form-group col">
-                <label for="location">País y ciudad</label>
-                <select id="pais" name="pais" class="form-select">
-                    <option value="">Selecciona un país</option>
-                    {{#paises}}
-                        <option value="{{id}}">{{nombre}}</option>
-                    {{/paises}}
-                </select>
-            </div>
-            <div class="form-group col">
-                <label for="location">Ciudad</label>
-                <select id="ciudad" name="id_ciudad" class="form-select">
-                    <option value="">Selecciona una ciudad</option>
-                </select>
+                <!-- Contenedor para el mapa -->
+                <p>Seleccione su ubicacion: </p>
+                <div id="map" style="width: 100%; height: 300px;"></div>
+
+                <!-- Campos ocultos para almacenar latitud y longitud -->
+                <input type="hidden" name="latitud" id="latitud">
+                <input type="hidden" name="longitud" id="longitud">
+
+                <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc&callback=initMap" async defer></script>
+                <script>
+                    let map, marker;
+
+                    function initMap() {
+                        // Coordenadas iniciales del mapa
+                        const initialPosition = { lat: -34.397, lng: 150.644 };
+                        map = new google.maps.Map(document.getElementById("map"), {
+                            center: initialPosition,
+                            zoom: 8,
+                        });
+
+                        map.addListener("click", (event) => {
+                            const clickedLocation = event.latLng;
+
+                            if (!marker) {
+                                marker = new google.maps.Marker({
+                                    position: clickedLocation,
+                                    map: map,
+                                });
+                            } else {
+                                marker.setPosition(clickedLocation);
+                            }
+
+                            // Almacenar las coordenadas en los campos ocultos
+                            document.getElementById("latitud").value = clickedLocation.lat();
+                            document.getElementById("longitud").value = clickedLocation.lng();
+                        });
+                    }
+                </script>
             </div>
         </div>
         <!--  SEXO   -->
