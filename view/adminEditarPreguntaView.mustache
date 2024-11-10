@@ -52,7 +52,6 @@
                        id="pregunta"
                        name="pregunta"
                        value="{{texto}}"
-                       readonly
                        required>
                 <input type="hidden" value="{{id}}" name="preguntaId">
             </div>
@@ -69,22 +68,15 @@
                 </div>
             </div>
         {{/respuestas}}
-        <div class="d-flex flex-column gap-2">
-            <p class="p-0 m-0"><strong>Seleccione la opción correcta</strong></p>
-            <div class="d-flex gap-3">
-                <label>
-                    <input type="radio" value="1" name="correcta">1
-                </label>
-                <label>
-                    <input type="radio" value="2" name="correcta">2
-                </label>
-                <label>
-                    <input type="radio" value="3" name="correcta">3
-                </label>
-                <label>
-                    <input type="radio" value="4" name="correcta">4
-                </label>
-            </div>
+    <div class="d-flex flex-column gap-2">
+        <p class="p-0 m-0"><strong>Seleccione la opción correcta</strong></p>
+    <div class="d-flex gap-3">
+        {{#respuestas}}
+            <label>
+                <input type="radio" value="{{idAumentado}}" name="correcta" {{checked}}>{{idAumentado}}
+            </label>
+        {{/respuestas}}
+        </div>
         </div>
         <div class="d-flex flex-column gap-2">
             <p class="p-0 m-0"><strong>Seleccione una categoría</strong></p>

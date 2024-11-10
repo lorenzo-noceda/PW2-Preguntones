@@ -100,7 +100,9 @@ class JuegoModel
 
         if ($result) {
             $contador = $this->actualizarRespuestasDePregunta(
-                $data["idPregunta"], $data["respuestas"], $data["idCategoria"]);
+                $data["idPregunta"],
+                $data["respuestas"],
+                $data["nroRespuestaCorrecta"]);
             if ($contador == 4) {
                 return true;
             } else {
@@ -153,7 +155,9 @@ class JuegoModel
     }
 
     private function actualizarRespuestasDePregunta(
-        int $idPregunta, array $respuestasCrudo, int $nroCategoria): int
+        int $idPregunta,
+        array $respuestasCrudo,
+        int $nroRespuestaCorrecta): int
     {
         $result = $this->eliminarRespuestasDePregunta($idPregunta);
 
@@ -172,15 +176,15 @@ class JuegoModel
         $contadorInsertsCorrectos = 0;
 
         if ($result) {
-            echo "borrado OK";
             // asignarle true a la que va
             foreach ($respuestas as &$r) {
-                if ($r["marcador"] == $nroCategoria) {
+                if ($r["marcador"] == $nroRespuestaCorrecta) {
                     $r["esCorrecta"] = true;
                     break;
                 }
             }
             unset($r);
+
             foreach ($respuestas as $r) {
                 $ok = $this->insertRespuestasDePregunta(
                     $r["texto"], $idPregunta, $r["esCorrecta"]);
@@ -270,12 +274,13 @@ class JuegoModel
     // desactivarPregunta(idPregunta)
     // eliminarPreguntasRespondidasDelUsuario(id)
 
-    public function getCategoriasMenosLaDePregunta($idCategoriaPregunta)
+    public function getCategoriasMenosLaDePregunta($idPregunta)
     {
-        $q = "SELECT * FROM categoria
-              WHERE id != :idCategoriaPregunta";
+        $q = "SELECT c.* FROM categoria c
+              JOIN pregunta p ON p.id_categoria != c.id
+              WHERE p.id = :idPregunta";
         $params = [
-            ["columna" => "idCategoriaPregunta", "valor" => $idCategoriaPregunta]
+            ["columna" => "idPregunta", "valor" => (int)$idPregunta]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
         if ($result["success"]) {

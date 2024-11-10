@@ -1,0 +1,10 @@
+.bg {
+    background-image: url("/PW2-Preguntones/public/images/procesoCorrectoBg.jpg");
+    background-size: cover;       /* Ajusta la imagen para que cubra todo el fondo */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
+    background-position: center;  /* Centra la imagen en el elemento */
+}
+
+main {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+}

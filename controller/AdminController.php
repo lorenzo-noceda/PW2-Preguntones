@@ -68,12 +68,14 @@ class AdminController
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $idPregunta = $_GET['id'];
             $categorias = $this->juegoModel->getCategoriasMenosLaDePregunta($idPregunta);
+
             $respuestas = $this->juegoModel->getRespuestasDePregunta($idPregunta);
             $pregunta = $this->juegoModel->getPreguntaPorId($idPregunta);
 
             $idAumentado = 1;
             foreach ($respuestas as &$respuesta) {
                 $respuesta["idAumentado"] = $idAumentado++;
+                $respuesta["checked"] = $respuesta["esCorrecta"] ? "checked" : "";
             }
             unset($respuesta);
 
@@ -91,14 +93,18 @@ class AdminController
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = $this->getFormularioDataActualizarPregunta();
-            $this->verVariable($data);
-
             $result = $this->juegoModel->actualizarPregunta($data);
 
             if (!empty($result)) {
-                echo "todo ok campeon";
+                $d["mensaje"] = "Actualizado correctamente.";
+                $d["url"] = "/PW2-Preguntones/admin/preguntas";
+                $d["boton"] = "Volver a administración";
+                $this->presenter->show("mensajeProcesoCorrecto", $d);
             } else {
-                echo "todo mal amigo";
+                $d["mensaje"] = "Ups! No ocurrió un error.";
+                $d["url"] = "/PW2-Preguntones/admin/preguntas";
+                $d["boton"] = "Volver a administración";
+                $this->presenter->show("mensajeProcesoEroneo", $d);
             }
         }
     }
