@@ -38,6 +38,7 @@ class JuegoController
         }
 
         $tienePreguntasDisponibles = $this->model->tienePreguntas($usuarioActual["id"]);
+
         if (!$tienePreguntasDisponibles) {
             $data["error"] = "No tienes más preguntas disponibles";
             $this->presenter->show("error", $data);
