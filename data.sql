@@ -147,7 +147,7 @@ CREATE TABLE pregunta
 );
 
 
-INSERT INTO pregunta (nombre, id_categoria, id_estado)
+INSERT INTO pregunta (texto, id_categoria, id_estado)
 VALUES ('¿Cuál es el planeta más cercano al sol?', 1, 1),                   -- Ciencia
        ('¿Quién fue el primer presidente de los Estados Unidos?', 2, 1),    -- Historia
        ('¿Cuál es la capital de Francia?', 3, 1),                           -- Geografía

@@ -150,7 +150,6 @@ class JuegoController
         $idPartida = $_SESSION["idPartida"];
 
 
-        $maximasCorrectas = 5;
 
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
         $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
@@ -162,15 +161,10 @@ class JuegoController
             // Si llegó al máximo contador, corta
             $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
             $_SESSION["puntaje"] += 10;
-            if ($_SESSION["contadorCorrectas"] == $maximasCorrectas) {
-                $this->model->guardarResultados();
-                $this->finalizarJuego();
-                return;
-            }
         } else {
             // Si responde mal se termina
             $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], $idPartida, false
+                $idUsuario, $pregunta["id"], $idPartida, 0
             );
             $this->finalizarJuego();
             return;
@@ -299,16 +293,10 @@ class JuegoController
             "puntaje" => $_SESSION["puntaje"],
         ];
 
-        // Reinicia el puntaje y el contador para la próxima partida
         unset($_SESSION["contadorCorrectas"]);
         unset($_SESSION["puntaje"]);
 
-        if ($data["puntaje"] >= 50) {
-            $this->presenter->show("resultadoPartida", $data);
-        } else {
-            $this->presenter->show("respuestaPregunta", $data);
-        }
-
+        $this->presenter->show("resultadoPartida", $data);
     }
 
     // Helpers de clase
@@ -327,6 +315,5 @@ class JuegoController
     {
         echo '<pre>' . print_r($data, true) . '</pre>';
     }
-
 
 }
