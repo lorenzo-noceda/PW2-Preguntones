@@ -258,6 +258,22 @@ CREATE TABLE partida
 ALTER TABLE partida
     ADD COLUMN fecha_jugada TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+-- 07/11/34
+
+ALTER TABLE usuario
+DROP FOREIGN KEY usuario_ciudad_fk;
+ALTER TABLE usuario
+    DROP COLUMN id_ciudad;
+DROP TABLE ciudad;
+ALTER TABLE usuario
+    ADD COLUMN latitud DECIMAL(10, 8) NULL,
+    ADD COLUMN longitud DECIMAL(11, 8) NULL;
+
+-- 10/11/24
+ALTER TABLE pregunta
+    ADD COLUMN estado_id INT,
+ADD CONSTRAINT fk_estado
+FOREIGN KEY (estado_id) REFERENCES estado(id);
 
 
 
