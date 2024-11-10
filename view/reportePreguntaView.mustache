@@ -16,9 +16,6 @@
 <body>
 <header class="col-12 bg-primary text-white styledHeader">
     <nav class="col-10 col-md-5 col-xl-4 d-flex mx-auto align-items-center">
-        <!--        <div class="hambugerContainer">-->
-        <!--            <img src="/PW2-Preguntones/public/images/hamburger.png"/>-->
-        <!--        </div>-->
         <a href="/PW2-Preguntones/login/cerrarSesion"
            class="col-3 d-flex justify-content-start text-decoration-none">
             <button class="btn btn-danger">Cerrar sesión</button>
@@ -34,11 +31,31 @@
         </div>
     </nav>
 </header>
-<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4 d-flex flex-column gap-2 mx-auto bor1">
-    <h1>Reporte de pregunta: #{{id}}</h1>
-    <form>
-        <textarea placeholder="Inserte su queja" name="queja"></textarea>
-    </form>
+<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
+             d-flex flex-column gap-2 mx-auto p-4">
+    {{#pregunta}}
+        <h1>Reportar pregunta</h1>
+        <form method="post"
+              class="d-flex flex-column gap-4"
+              enctype="multipart/form-data"
+              action="/PW2-Preguntones/juego/enviarReporte">
+            <div class="d-flex flex-column gap-2">
+                <label>Pregunta a reportar:</label>
+                <input value="{{texto}}" class="form-control" type="text" readonly>
+                <input value="{{id}}" name="id" type="hidden">
+            </div>
+            <div>
+                <label for="queja">Descripción</label>
+                <textarea placeholder="Inserte su queja"
+                          name="queja"
+                          class="form-control resize-none"
+                ></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">
+                Enviar reporte
+            </button>
+        </form>
+    {{/pregunta}}
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
