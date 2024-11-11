@@ -37,56 +37,26 @@ class JuegoController
             $_SESSION["puntaje"] = 0;
         }
 
-        $tienePreguntasDisponibles = $this->model->tienePreguntas($usuarioActual["id"]);
-        if (!$tienePreguntasDisponibles) {
-            $data["error"] = "No tienes más preguntas disponibles";
-            $this->presenter->show("error", $data);
-            return;
+        $data = $this->model->empezar($usuarioActual["id"]);
+
+        if(isset($data["id_pregunta"])){
+            $_SESSION["id_pregunta"] = $data["id_pregunta"];
         }
 
-        $juego = $this->model->empezar($usuarioActual["id"]);
-        $_SESSION["idPartida"] = $juego["idPartida"];
+        if(isset($data["id_partida"])){
+            $_SESSION["id_partida"] = $data["id_partida"];
+        }
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
-            "pregunta" => $juego["pregunta"],
-            "respuestas" => $juego["respuestas"],
+            "pregunta" => $data["pregunta"],
+            "respuestas" => $data["respuestas"],
         ];
 
         $this->presenter->show("juego", $data);
     }
 
-    // Método por defecto
-    public function partida(): void
-    {
-        $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
-
-        $tienePreguntasDisponibles = $this->model->tienePreguntas($usuarioActual["id"]);
-        if (!$tienePreguntasDisponibles) {
-            $data["error"] = "No tienes más preguntas disponibles";
-            $this->presenter->show("error", $data);
-            return;
-        }
-
-        if (!isset($_SESSION["contadorCorrectas"])) {
-            $_SESSION["contadorCorrectas"] = 0;
-            $_SESSION["puntaje"] = 0;
-        }
-
-        $idPartida = $_SESSION["idPartida"];
-        $juego = $this->model->continuar($usuarioActual["id"], $idPartida);
-
-        $data = [
-            "nombre" => $usuarioActual["nombre"],
-            "id_usuario" => $usuarioActual["id"],
-            "pregunta" => $juego["pregunta"],
-            "respuestas" => $juego["respuestas"],
-        ];
-
-        $this->presenter->show("juego", $data);
-    }
 
     // Método para controlar y usar en desarrollo
     public function status(): void
@@ -148,12 +118,11 @@ class JuegoController
         $idUsuario = $_SESSION["usuario"]["id"];
         $idPartida = $_SESSION["idPartida"];
 
-
-
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
         $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
 
         $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+        unset($_SESSION["id_pregunta"]);
 
         if ($estado) {
             // Si responde bien, contador y puntaje actualizado
@@ -165,6 +134,7 @@ class JuegoController
             $this->model->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
+            unset($_SESSION["id_partida"]);
             $this->finalizarJuego();
             return;
         }
@@ -173,12 +143,12 @@ class JuegoController
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
         $result = $this->model->guardarRespuesta(
-            $idUsuario, $preguntaId, $idPartida, true
+            $idUsuario, $preguntaId, $idPartida, 1
         );
 
         if ($result) {
             $data = [
-                "pregunta" => $pregunta["texto"],
+                "pregunta" => $pregunta["pregunta_str"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
             ];

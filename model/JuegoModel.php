@@ -13,52 +13,21 @@ class JuegoModel
 
     public function empezar($idUsuario): array
     {
-        $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
-        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
+        if(isset($_SESSION["id_pregunta"])){
+            $data["pregunta"] = $this->getPreguntaPorId($_SESSION["id_pregunta"]);
+        } else {
+            $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
+            $data["id_pregunta"] = $data["pregunta"]["id"];
+        }
 
+        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
 
-        $idPartida = $this->insertPartida((int)$idUsuario);
-        $data["idPartida"] = $idPartida;
-
-        return $data;
-    }
-
-    public function continuar ($idUsuario, $idPartida): array {
-        $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
-        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
-
-        shuffle($data["respuestas"]); // delegar despues
-
-        return $data;
-    }
-
-
-
-    public function getRespuestasDePreguntaTest($id)
-    {
-        $result = $this->getPreguntaPorIdTest($id);
-        if ($result["success"]) {
-            return $result["data"]["respuestas"];
-        } else return false;
-    }
-
-
-    // Metodo para probar mientras no este la DB establecida
-    public function getPreguntaPorIdTest($id)
-    {
-        $data = [];
-        $data["success"] = false;
-        $data["data"] = null;
-        foreach ($this->getPreguntas() as $pregunta) {
-            if ((int)$pregunta["pregunta"]["id"] == (int)$id) {
-                $data["data"] = $pregunta;
-                break;
-            }
+        if(!isset($_SESSION["id_partida"])){
+            $idPartida = $this->insertPartida($idUsuario);
+            $data["id_partida"] = $idPartida;
         }
-        if ($data["data"] != null) {
-            $data["success"] = true;
-        }
+
         return $data;
     }
 
@@ -244,15 +213,6 @@ class JuegoModel
 
     }
 
-    public function tienePreguntas($idUsuario): bool
-    {
-        $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
-        if (count($preguntasDB) > 0) {
-            return true;
-        }
-        return false;
-    }
-
     public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
     {
         $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
@@ -264,7 +224,6 @@ class JuegoModel
             // incorrecta y salio bien el insert
             $result = $this->updatePartida($idUsuario, $idPartida, 0);
         } else {
-            // aca no debería entrar
         }
         return $result;
     }
@@ -301,9 +260,12 @@ class JuegoModel
 
     public function getPreguntaPorId($id)
     {
-        $q = "SELECT *
+        $q = "SELECT 
+                    texto as pregunta_str, 
+                    id, id_categoria, id_estado
               FROM pregunta
               WHERE id = :id";
+
         $params = [
             ["columna" => "id", "valor" => $id]
         ];
@@ -323,7 +285,7 @@ class JuegoModel
               FROM respuesta
               WHERE id_pregunta = :id";
         $params = [
-            ["columna" => "id", "valor" => (int)$id]
+            ["columna" => "id", "valor" => $id]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
         if ($result["success"]) {
