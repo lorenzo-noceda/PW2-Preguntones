@@ -49,6 +49,10 @@ class JuegoController
             $_SESSION["id_partida"] = $data["id_partida"];
         }
 
+        // Guardar para verla como resultado (malo/bueno)
+        $_SESSION["pregunta"] = $data["pregunta"];
+
+
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
@@ -60,18 +64,66 @@ class JuegoController
     }
 
 
-    public function cambiarPerfil()
+    // Método de validación
+    // Guarda puntaje y contador
+    // Guarda como fue respondida la pregunta // in progress...
+    // TODO: sacar if's del controlador y mandarlos al modelo
+    public function validarRespuesta()
     {
-        $id = $_GET["id"];
-        $usuarios = $_SESSION["usuarios"];
-        foreach ($usuarios as $usuario) {
-            if ($usuario["id"] == $id) {
-                $usuario["verificado"] = true;
-                $_SESSION["usuario"] = $usuario;
-                unset($_SESSION["usuarios"]);
-                $this->redireccionar("home");
-            }
+        unset($_SESSION["id_pregunta"]);
+
+        // Valido ingreso por $_POST
+        $parametros = $this->validarPreguntaRespuestaRecibidas();
+
+        // Asigno parametros obtenidos
+        $preguntaId = $parametros["pregunta_id"];
+        $respuestaElegidaId = $parametros["respuesta_id"];
+        $idUsuario = $_SESSION["usuario"]["id"];
+        $idPartida = $_SESSION["idPartida"] ?? null;
+
+        $pregunta = $this->model->getPreguntaPorId($preguntaId);
+        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
+
+        $respuesta = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+
+        $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] != null ? $respuesta["respuestaCorrecta_str"] : null;
+        $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] != null ? $respuesta["respuestaIncorrecta_str"] : null;
+
+
+        if ($respuesta["respondioBien"]) {
+            // Si responde bien, contador y puntaje actualizado
+            // Si llegó al máximo contador, corta
+            $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
+            $_SESSION["puntaje"] += 10;
+        } else {
+            // Si responde mal se termina
+            $this->model->guardarRespuesta(
+                $idUsuario, $pregunta["id"], $idPartida, 0
+            );
+            unset($_SESSION["id_partida"]);
+            $this->finalizarJuego();
+            return;
         }
+
+        // Flujo por si responde bien.
+        $result = $this->model->guardarRespuesta(
+            $idUsuario, $preguntaId, $idPartida, 1
+        );
+
+        if ($result) {
+            $_SESSION["empezada"] = true;
+            $data = [
+                "pregunta" => $pregunta["pregunta_str"],
+                "correctas" => $_SESSION["contadorCorrectas"],
+                "puntaje" => $_SESSION["puntaje"],
+                "id" => $pregunta["id"],
+                "respuesta_texto" => $respuesta["respuestaCorrecta_str"],
+            ];
+            $this->presenter->show("despuesDePregunta", $data);
+        } else {
+            echo "error";
+        }
+
     }
 
     public function reportar()
@@ -103,71 +155,21 @@ class JuegoController
         }
     }
 
-
-
-    // Método de validación
-    // Guarda puntaje y contador
-    // Guarda como fue respondida la pregunta // in progress...
-    // TODO: sacar if's del controlador y mandarlos al modelo
-    public function validarRespuesta()
+    private
+    function finalizarJuego(): void
     {
-        // Valido ingreso por $_POST
-        $parametros = $this->validarPreguntaRespuestaRecibidas();
+        $data = [
+            "puntaje" => $_SESSION["puntaje"],
+            "pregunta" => $_SESSION["pregunta"]["pregunta_str"],
+            "respuestaCorrecta" => htmlspecialchars($_SESSION["correcta_str"]),
+            "respuestaElegida" => htmlspecialchars($_SESSION["incorrecta_str"])
+        ];
 
-        // Asigno parametros obtenidos
-        $preguntaId = $parametros["pregunta_id"];
-        $respuestaElegidaId = $parametros["respuesta_id"];
-        $idUsuario = $_SESSION["usuario"]["id"];
-        $idPartida = $_SESSION["idPartida"];
+        unset($_SESSION["pregunta"]);
+        unset($_SESSION["contadorCorrectas"]);
+        unset($_SESSION["puntaje"]);
 
-        // Validación anti F5
-        $estabaEmpezada = isset($_SESSION["empezada"]);
-        $yaRespondioAntes = isset($_SESSION["respondioAntes"]);
-
-        $pregunta = $this->model->getPreguntaPorId($preguntaId);
-        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
-
-        $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
-        unset($_SESSION["id_pregunta"]);
-
-        if (!empty($estado)) {
-            // Si responde bien, contador y puntaje actualizado
-            // Si llegó al máximo contador, corta
-            $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
-            $_SESSION["puntaje"] += 10;
-            $_SESSION["respondioAntes"] = true;
-        } else {
-            // Si responde mal se termina
-            $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], $idPartida, 0
-            );
-            $_SESSION["respondioAntes"] = false;
-            unset($_SESSION["id_partida"]);
-            $this->finalizarJuego();
-            return;
-        }
-
-
-        // Flujo por si responde bien y todavía no llegó al máximo contador
-        // $this->redireccionar("juego");
-        $result = $this->model->guardarRespuesta(
-            $idUsuario, $preguntaId, $idPartida, 1
-        );
-
-        if ($result) {
-            $_SESSION["empezada"] = true;
-            $data = [
-                "pregunta" => $pregunta["pregunta_str"],
-                "correctas" => $_SESSION["contadorCorrectas"],
-                "puntaje" => $_SESSION["puntaje"],
-                "id" => $pregunta["id"],
-                "respuesta_texto" => $estado,
-            ];
-            $this->presenter->show("despuesDePregunta", $data);
-        } else {
-            echo "error";
-        }
-
+        $this->presenter->show("resultadoPartida", $data);
     }
 
     // Métodos solo para desarrollo
@@ -190,18 +192,34 @@ class JuegoController
      * @param $idRespuestaDada
      * @return bool
      */
-    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): mixed
+    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): array
     {
+        $respuesta = [];
+        $respuesta["respondioBien"] = false;
+
         if ($arrayRespuestas) {
             foreach ($arrayRespuestas as $r) {
-                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
-                    && $r["esCorrecta"]) {
-                    return $r["respuesta_str"];
+                // Comparar si id de respuesta coincide con alguna del array
+                // Además verificamos si es la misma id, si es correcta
+                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada) {
+                    if ($r["esCorrecta"]) {
+                        $respuesta["respondioBien"] = true;
+                        $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
+                        $respuesta["respuestaIncorrecta_str"] = null;
+                        break;
+                    } else {
+                        $respuesta["respuestaIncorrecta_str"] = $r["respuesta_str"];
+                    }
+                } else {
+                    if ($r["esCorrecta"]) {
+                        $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
+                    }
                 }
             }
         }
-        return false;
+        return $respuesta;
     }
+
 
 
     public function probandoDeGonza()
@@ -219,7 +237,8 @@ class JuegoController
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
      * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
      */
-    private function validarUsuario(): mixed
+    private
+    function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
         if ($usuarioActual == null) {
@@ -233,7 +252,8 @@ class JuegoController
      * @param $usuario
      * @return void
      */
-    private function validarActivacion($usuario): void
+    private
+    function validarActivacion($usuario): void
     {
         if (!$usuario["verificado"]) {
             $_SESSION["correoParaValidar"] = $usuario["email"];
@@ -246,7 +266,8 @@ class JuegoController
      * Valida si los parametros (pregunta_id y respuesta_id) estan establecidos luego de haber respondido. Sino usa <code>header</code> para redireccionar por error.
      * @return array
      */
-    private function validarPreguntaRespuestaRecibidas(): array
+    private
+    function validarPreguntaRespuestaRecibidas(): array
     {
         $params = isset($_POST["pregunta_id"]) &&
             isset($_POST["respuesta_id"]);
@@ -263,20 +284,7 @@ class JuegoController
     }
 
 
-    private function finalizarJuego(): void
-    {
-        $data = [
-            "puntaje" => $_SESSION["puntaje"],
-            "pregunta" => "pregunta",
-            "respuestaCorrecta" => "si",
-            "respuestaElegida" => "no"
-        ];
 
-        unset($_SESSION["contadorCorrectas"]);
-        unset($_SESSION["puntaje"]);
-
-        $this->presenter->show("resultadoPartida", $data);
-    }
 
     // Helpers de clase
 
@@ -284,7 +292,8 @@ class JuegoController
      * @param $ruta
      * @return void
      */
-    #[NoReturn] private function redireccionar($ruta): void
+    #[
+        NoReturn] private function redireccionar($ruta): void
     {
         header("Location: /PW2-preguntones/$ruta");
         exit();

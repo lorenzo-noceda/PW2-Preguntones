@@ -151,6 +151,20 @@ class AdminController
         $this->redireccionar("admin");
     }
 
+    public function cambiarPerfil()
+    {
+        $id = $_GET["id"];
+        $usuarios = $_SESSION["usuarios"];
+        foreach ($usuarios as $usuario) {
+            if ($usuario["id"] == $id) {
+                $usuario["verificado"] = true;
+                $_SESSION["usuario"] = $usuario;
+                unset($_SESSION["usuarios"]);
+                $this->redireccionar("home");
+            }
+        }
+    }
+
     /**
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
      * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
