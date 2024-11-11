@@ -183,7 +183,7 @@ class JuegoController
 
         $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
 
-        if ($estado) {
+        if (!empty($estado)) {
             // Si responde bien, contador y puntaje actualizado
             // Si llegó al máximo contador, corta
             $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
@@ -209,7 +209,8 @@ class JuegoController
                 "pregunta" => $pregunta["texto"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
-                "id" => $pregunta["id"]
+                "id" => $pregunta["id"],
+                "respuesta_texto" => $estado,
             ];
             $this->presenter->show("despuesDePregunta", $data);
         } else {
@@ -238,13 +239,13 @@ class JuegoController
      * @param $idRespuestaDada
      * @return bool
      */
-    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): bool
+    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): mixed
     {
         if ($arrayRespuestas) {
             foreach ($arrayRespuestas as $r) {
                 if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
                     && $r["esCorrecta"]) {
-                    return true;
+                    return $r["respuesta_str"];
                 }
             }
         }
@@ -296,7 +297,8 @@ class JuegoController
      */
     private function validarPreguntaRespuestaRecibidas(): array
     {
-        $params = isset($_POST["pregunta_id"]) && isset($_POST["respuesta_id"]);
+        $params = isset($_POST["pregunta_id"]) &&
+            isset($_POST["respuesta_id"]);
         if (!$params) {
             $_SESSION["error"] = "Ocurrió un error.";
             $this->redireccionar("home");
@@ -304,7 +306,7 @@ class JuegoController
             return
                 [
                     "pregunta_id" => $_POST["pregunta_id"],
-                    "respuesta_id" => $_POST["respuesta_id"]
+                    "respuesta_id" => $_POST["respuesta_id"],
                 ];
         }
     }

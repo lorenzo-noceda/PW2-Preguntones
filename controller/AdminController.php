@@ -57,6 +57,8 @@ class AdminController
             $result = $this->juegoModel->desactivarPregunta($idPregunta);
             if ($result) {
                 $data["mensaje"] = "Pregunta desactivada correctamente.";
+                $data["boton"] = "Volver a administración";
+                $data["url"] = "admin/reportadas";
                 $this->presenter->show("mensajeProcesoCorrecto", $data);
             } else echo "error";
         }
@@ -89,7 +91,7 @@ class AdminController
 
     }
 
-    public function actualizar()
+    public function actualizar(): void
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = $this->getFormularioDataActualizarPregunta();
@@ -97,7 +99,7 @@ class AdminController
 
             if (!empty($result)) {
                 $d["mensaje"] = "Actualizado correctamente.";
-                $d["url"] = "/PW2-Preguntones/admin/preguntas";
+                $d["url"] = "admin/preguntas";
                 $d["boton"] = "Volver a administración";
                 $this->presenter->show("mensajeProcesoCorrecto", $d);
             } else {
