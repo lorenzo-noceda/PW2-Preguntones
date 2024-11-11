@@ -49,12 +49,16 @@ class JuegoController
             $_SESSION["id_partida"] = $data["id_partida"];
         }
 
+
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
             "pregunta" => $data["pregunta"],
             "respuestas" => $data["respuestas"],
         ];
+
+        $_SESSION["pregunta"] = $data["pregunta"];
+
 
         $this->presenter->show("juego", $data);
     }
@@ -120,9 +124,6 @@ class JuegoController
         $idUsuario = $_SESSION["usuario"]["id"];
         $idPartida = $_SESSION["idPartida"];
 
-        // Validación anti F5
-        $estabaEmpezada = isset($_SESSION["empezada"]);
-        $yaRespondioAntes = isset($_SESSION["respondioAntes"]);
 
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
         $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
@@ -135,13 +136,11 @@ class JuegoController
             // Si llegó al máximo contador, corta
             $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
             $_SESSION["puntaje"] += 10;
-            $_SESSION["respondioAntes"] = true;
         } else {
             // Si responde mal se termina
             $this->model->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
-            $_SESSION["respondioAntes"] = false;
             unset($_SESSION["id_partida"]);
             $this->finalizarJuego();
             return;
@@ -267,7 +266,7 @@ class JuegoController
     {
         $data = [
             "puntaje" => $_SESSION["puntaje"],
-            "pregunta" => "pregunta",
+            "pregunta" => $_SESSION["pregunta"]["pregunta_str"],
             "respuestaCorrecta" => "si",
             "respuestaElegida" => "no"
         ];
