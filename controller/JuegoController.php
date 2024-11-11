@@ -65,25 +65,25 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
 
-        $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
+        $cantidadDePartidas = $this->model->getPartidasDelUsuario($usuarioActual["id"]);
         if (empty($cantidadDePartidas)) {
             $cantidadDePartidas = 0;
         } else {
             $cantidadDePartidas = count($cantidadDePartidas);
         }
 
-        $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
+        $_SESSION["usuarios"] = $this->model->getUsuariosTest();
 
         $data = [
             "texto" => "Hola mundo",
-            "respondidas" => $this->juegoModel->getRespondidasDeUsuario($usuarioActual["id"]),
-            "todas" => $this->juegoModel->getCantidadPreguntasBD(),
-            "correctas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
-            "malas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
+            "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
+            "todas" => $this->model->getCantidadPreguntasBD(),
+            "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
+            "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
             "usuarios" => $_SESSION["usuarios"],
-            "partidasJugadas" => $this->juegoModel->getPartidas(),
-            "ranking" => $this->juegoModel->getRanking()
+            "partidasJugadas" => $this->model->getPartidas(),
+            "ranking" => $this->model->getRanking()
         ];
         $this->presenter->show("admin", $data);
     }
@@ -107,7 +107,7 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
         $idPreguntaReporte = $_GET["id"];
-        $data["pregunta"] = $this->juegoModel->getPreguntaPorId($idPreguntaReporte);
+        $data["pregunta"] = $this->model->getPreguntaPorId($idPreguntaReporte);
         $this->presenter->show("reportePregunta", $data);
     }
 
@@ -118,7 +118,7 @@ class JuegoController
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $idPregunta = $_POST['id'];
             $stringQueja = $_POST['queja'];
-            $result = $this->juegoModel->reportar(
+            $result = $this->model->reportar(
                 $usuarioActual["id"],
                 $idPregunta,
                 $stringQueja);
@@ -160,7 +160,7 @@ class JuegoController
             $_SESSION["puntaje"] += 10;
         } else {
             // Si responde mal se termina
-            $this->juegoModel->guardarRespuesta(
+            $this->model->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
             unset($_SESSION["id_partida"]);
@@ -194,14 +194,14 @@ class JuegoController
     public function resetPartidasJugadas()
     {
         $idUsuario = $_SESSION["usuario"]["id"];
-        $this->juegoModel->resetPartidasDelUsuario($idUsuario);
+        $this->model->resetPartidasDelUsuario($idUsuario);
         $this->redireccionar("juego/status");
     }
 
     public function resetRespondidasDelUsuario()
     {
         $idUsuario = $_SESSION["usuario"]["id"];
-        $this->juegoModel->resetUsuario_Pregunta($idUsuario);
+        $this->model->resetUsuario_Pregunta($idUsuario);
         $this->redireccionar("juego/status");
     }
 
@@ -227,10 +227,10 @@ class JuegoController
     public function probandoDeGonza()
     {
         $data = [
-            "categorias" => $this->juegoModel->getCategorias(),
-            "estados" => $this->juegoModel->getEstados(),
-            "preguntas" => $this->juegoModel->getPreguntas1(),
-            "respuestas" => $this->juegoModel->getRespuestas()
+            "categorias" => $this->model->getCategorias(),
+            "estados" => $this->model->getEstados(),
+            "preguntas" => $this->model->getPreguntas(),
+            "respuestas" => $this->model->getRespuestas()
         ];
         $this->presenter->show("vistaDePruebas", $data);
     }

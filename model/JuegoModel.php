@@ -94,7 +94,7 @@ class JuegoModel
         $result = $this->updatePregunta(
             $data["preguntaTexto"],
             $data["idCategoria"],
-            $data["idPregunta"],
+            $data["idPregunta"]
         );
 
         if ($result) {
@@ -439,22 +439,6 @@ class JuegoModel
         return $result;
     }
 
-  
-    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
-    {
-        $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
-
-        if ($state && $result) {
-            // correcta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, $idPartida, 10);
-        } else if (!$state && $result) {
-            // incorrecta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, $idPartida, 0);
-        } else {
-        }
-        return $result;
-    }
-
     private function updatePartida($idUsuario, $idPartida, $puntos)
     {
         $puntos = (int)$puntos;
@@ -566,20 +550,6 @@ class JuegoModel
         } else return false;
     }
 
-    public function insertRespuesta($idUsuario, $idPregunta, $state)
-    {
-        $q = "INSERT INTO usuario_pregunta 
-              (usuario_id, pregunta_id, respondida_correctamente) 
-              VALUES (:idUsuario, :idPregunta, :respondioBien)";
-        $params = [
-            ["columna" => "idUsuario", "valor" => $idUsuario],
-            ["columna" => "idPregunta", "valor" => $idPregunta],
-            ["columna" => "respondioBien", "valor" => $state]
-        ];
-        $result = $this->database->query($q, 'INSERT', $params);
-        return $result["success"];
-    }
-
     public function insertReporte($idUsuario, $idPregunta, $texto)
     {
         $q = "INSERT INTO reporte 
@@ -591,22 +561,6 @@ class JuegoModel
             ["columna" => "idPregunta", "valor" => $idPregunta]
         ];
         $result = $this->database->query($q, 'INSERT', $params);
-        return $result["success"];
-    }
-
-
-    private function updatePartida($idUsuario, $idPartida, $puntos)
-    {
-        $puntos = (int)$puntos;
-        $q = "UPDATE partida
-              SET puntaje = puntaje + :puntaje
-              WHERE jugador_id = :id AND id = :partidaId";
-        $params = [
-            ["columna" => "id", "valor" => $idUsuario],
-            ["columna" => "puntaje", "valor" => $puntos],
-            ["columna" => "partidaId", "valor" => $idPartida],
-        ];
-        $result = $this->database->query($q, 'UPDATE', $params);
         return $result["success"];
     }
 
