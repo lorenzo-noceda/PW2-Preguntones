@@ -39,10 +39,10 @@
     </div>
 </header>
 <main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
-             d-flex flex-column justify-content-between gap-2 mx-auto h-100 p-2">
+             d-flex flex-column justify-content-between gap-2 mx-auto h-100 p-4">
     <!--   PREGUNTA RESPONDIDA Y REPORTE   -->
     <div class="col-12 d-flex flex-column gap-2">
-        <h3 class="text-center">¡Respuesta correcta!</h3>
+        <h3 class="text-center m-0 pt-2 fs-4">Felicidades, ¡contestaste correctamente!</h3>
         <div class="text-center py-5 px-3 fs-4 fw-semibold bg-success-subtle rounded-4 mt-2
                     d-flex flex-column gap-2">
             {{#pregunta}}
@@ -50,8 +50,8 @@
             {{/pregunta}}
         </div>
         <div class="d-flex align-items-center justify-content-center
-                    text-white bg-success rounded-4 position-relative p-3">
-            <p class="m-0 p-0 text-center fs-5 fw-semibold">{{respuesta_texto}}</p>
+                    text-white bg-success rounded-4 position-relative p-2 mt-2">
+            <p class="m-0 p-0 text-center fs-6 fw-semibold">{{respuesta_texto}}</p>
             <div class="position-absolute checkImage">
                 <img src="/PW2-Preguntones/public/images/check.svg"
                      alt="Check Image">
@@ -66,7 +66,7 @@
             {{/pregunta}}
         </div>
     </div>
-    <h5 class="mx-auto">Felicidades, ¡contestaste correctamente!</h5>
+    <!-- BOTON CONTINUAR  -->
     <div class="pb-2 col-12">
         {{#pregunta}}
             <a href="/PW2-Preguntones/juego/empezar"
