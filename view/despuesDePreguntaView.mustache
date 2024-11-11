@@ -42,7 +42,7 @@
              d-flex flex-column justify-content-between gap-2 mx-auto h-100 p-2">
     <!--   PREGUNTA RESPONDIDA Y REPORTE   -->
     <div class="col-12 d-flex flex-column gap-2">
-        <h3 class="text-center">¡Respuesta correcta!</h3>
+        <h3 class="text-center m-0 pt-2 fs-4">Felicidades, ¡contestaste correctamente!</h3>
         <div class="text-center py-5 px-3 fs-4 fw-semibold bg-success-subtle rounded-4 mt-2
                     d-flex flex-column gap-2">
             {{#pregunta}}
@@ -66,7 +66,6 @@
             {{/pregunta}}
         </div>
     </div>
-    <h5 class="mx-auto">Felicidades, ¡contestaste correctamente!</h5>
     <div class="pb-2 col-12">
         {{#pregunta}}
             <a href="/PW2-Preguntones/juego/empezar"

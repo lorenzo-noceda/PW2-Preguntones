@@ -14,7 +14,30 @@ class AdminController
 
     public function list(): void
     {
-        $this->presenter->show("admin", []);
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+
+        $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
+        if (empty($cantidadDePartidas)) {
+            $cantidadDePartidas = 0;
+        } else {
+            $cantidadDePartidas = count($cantidadDePartidas);
+        }
+
+        $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
+
+        $data = [
+            "texto" => "Hola mundo",
+            "respondidas" => $this->juegoModel->getRespondidasDeUsuario($usuarioActual["id"]),
+            "todas" => $this->juegoModel->getCantidadPreguntasBD(),
+            "correctas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
+            "malas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
+            "partidas" => $cantidadDePartidas,
+            "usuarios" => $_SESSION["usuarios"],
+            "partidasJugadas" => $this->juegoModel->getPartidas(),
+            "ranking" => $this->juegoModel->getRanking()
+        ];
+        $this->presenter->show("admin", $data);
     }
 
     public function preguntas()
@@ -126,6 +149,33 @@ class AdminController
     {
         $this->juegoModel->resetReportes();
         $this->redireccionar("admin");
+    }
+
+    /**
+     * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
+     * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
+     */
+    private function validarUsuario(): mixed
+    {
+        $usuarioActual = $_SESSION["usuario"] ?? null;
+        if ($usuarioActual == null) {
+            $this->redireccionar("login");
+        }
+        return $usuarioActual;
+    }
+
+    /**
+     * Valida que el usuario este verificado sino hace uso de <code>header</code> para redireccionar y que valide su correo.
+     * @param $usuario
+     * @return void
+     */
+    private function validarActivacion($usuario): void
+    {
+        if (!$usuario["verificado"]) {
+            $_SESSION["correoParaValidar"] = $usuario["email"];
+            $_SESSION["id_usuario"] = $usuario["id"];
+            $this->redireccionar("registro/validarCorreo");
+        }
     }
 
 

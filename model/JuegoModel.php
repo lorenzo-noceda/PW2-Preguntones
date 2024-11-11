@@ -11,10 +11,10 @@ class JuegoModel
     }
 
 
-    public function empezar($idUsuario): array
+    public function empezar($idUsuario, $hayPregunta = false): array
     {
-        if(isset($_SESSION["id_pregunta"])){
-            $data["pregunta"] = $this->getPreguntaPorId($_SESSION["id_pregunta"]);
+        if($hayPregunta){
+            $data["pregunta"] = $this->getPreguntaPorId($hayPregunta);
         } else {
             $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
             $data["id_pregunta"] = $data["pregunta"]["id"];
@@ -23,7 +23,7 @@ class JuegoModel
         $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
 
-        if(!isset($_SESSION["id_partida"])){
+        if(!$hayPregunta){
             $idPartida = $this->insertPartida($idUsuario);
             $data["id_partida"] = $idPartida;
         }
