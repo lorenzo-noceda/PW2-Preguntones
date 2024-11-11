@@ -13,26 +13,24 @@ class JuegoModel
 
     public function empezar($idUsuario): array
     {
-        $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
-        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
+        if(isset($_SESSION["id_pregunta"])){
+            $data["pregunta"] = $this->getPreguntaPorId($_SESSION["id_pregunta"]);
+        } else {
+            $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
+            $data["id_pregunta"] = $data["pregunta"]["id"];
+        }
 
+        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
 
-        $idPartida = $this->insertPartida((int)$idUsuario);
-        $data["idPartida"] = $idPartida;
-
+        if(!isset($_SESSION["id_partida"])){
+            $idPartida = $this->insertPartida($idUsuario);
+            $data["id_partida"] = $idPartida;
+        }
+      
         return $data;
     }
-
-    public function continuar($idUsuario, $idPartida): array
-    {
-        $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
-        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
-
-        shuffle($data["respuestas"]); // delegar despues
-
-        return $data;
-    }
+  
 
     public function reportar($idUsuario, $idPregunta, $stringTexto)
     {
@@ -50,6 +48,7 @@ class JuegoModel
         return false;
     }
 
+  
     private function getPreguntaRandom($idUsuario)
     {
         // Functiona OK
@@ -440,21 +439,59 @@ class JuegoModel
         return $result;
     }
 
-    public function tienePreguntas($idUsuario): bool
+  
+    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
     {
-        $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
-        if (count($preguntasDB) > 0) {
-            return true;
+        $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
+
+        if ($state && $result) {
+            // correcta y salio bien el insert
+            $result = $this->updatePartida($idUsuario, $idPartida, 10);
+        } else if (!$state && $result) {
+            // incorrecta y salio bien el insert
+            $result = $this->updatePartida($idUsuario, $idPartida, 0);
+        } else {
         }
-        return false;
+        return $result;
     }
+
+    private function updatePartida($idUsuario, $idPartida, $puntos)
+    {
+        $puntos = (int)$puntos;
+        $q = "UPDATE partida
+              SET puntaje = puntaje + :puntaje
+              WHERE jugador_id = :id AND id = :partidaId";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario],
+            ["columna" => "puntaje", "valor" => $puntos],
+            ["columna" => "partidaId", "valor" => $idPartida],
+        ];
+        $result = $this->database->query($q, 'UPDATE', $params);
+        return $result["success"];
+    }
+
+    public function insertRespuesta($idUsuario, $idPregunta, $state)
+    {
+        $q = "INSERT INTO usuario_pregunta 
+              (usuario_id, pregunta_id, respondida_correctamente) 
+              VALUES (:idUsuario, :idPregunta, :respondioBien)";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario],
+            ["columna" => "idPregunta", "valor" => $idPregunta],
+            ["columna" => "respondioBien", "valor" => $state]
+        ];
+        $result = $this->database->query($q, 'INSERT', $params);
+        return $result["success"];
+    }
+
 
     public function getPreguntaPorId($id)
     {
-        $q = "SELECT p.*,
-              c.descripcion AS categoria
-              FROM pregunta AS p
-              JOIN categoria c ON p.id_categoria = c.id
+        $q = "SELECT 
+              p.texto as pregunta_str, 
+              p.id, p.id_categoria, p.id_estado, c.descripcion as categoria
+              FROM pregunta p 
+              JOIN categoria c on p.id_categoria = c.id
               WHERE p.id = :id";
         $params = [
             ["columna" => "id", "valor" => $id]
@@ -475,7 +512,7 @@ class JuegoModel
               FROM respuesta
               WHERE id_pregunta = :id";
         $params = [
-            ["columna" => "id", "valor" => (int)$id]
+            ["columna" => "id", "valor" => $id]
         ];
         $result = $this->database->query($q, 'MULTIPLE', $params);
         if ($result["success"]) {

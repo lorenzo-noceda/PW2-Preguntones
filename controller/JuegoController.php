@@ -5,12 +5,12 @@ use JetBrains\PhpStorm\NoReturn;
 class JuegoController
 {
 
-    private $juegoModel;
+    private $model;
     private $presenter;
 
     public function __construct($model, $presenter)
     {
-        $this->juegoModel = $model;
+        $this->model = $model;
         $this->presenter = $presenter;
     }
 
@@ -36,58 +36,28 @@ class JuegoController
             $_SESSION["contadorCorrectas"] = 0;
             $_SESSION["puntaje"] = 0;
         }
+      
+        $data = $this->model->empezar($usuarioActual["id"]);
 
-        $tienePreguntasDisponibles = $this->juegoModel->tienePreguntas($usuarioActual["id"]);
+        if(isset($data["id_pregunta"])){
+            $_SESSION["id_pregunta"] = $data["id_pregunta"];
 
-        if (!$tienePreguntasDisponibles) {
-            $data["error"] = "No tienes más preguntas disponibles";
-            $this->presenter->show("error", $data);
-            return;
         }
 
-        $juego = $this->juegoModel->empezar($usuarioActual["id"]);
-        $_SESSION["idPartida"] = $juego["idPartida"];
+        if(isset($data["id_partida"])){
+            $_SESSION["id_partida"] = $data["id_partida"];
+        }
 
         $data = [
             "nombre" => $usuarioActual["nombre"],
             "id_usuario" => $usuarioActual["id"],
-            "pregunta" => $juego["pregunta"],
-            "respuestas" => $juego["respuestas"],
+            "pregunta" => $data["pregunta"],
+            "respuestas" => $data["respuestas"],
         ];
 
         $this->presenter->show("juego", $data);
     }
 
-    // Método por defecto
-    public function partida(): void
-    {
-        $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
-
-        $tienePreguntasDisponibles = $this->juegoModel->tienePreguntas($usuarioActual["id"]);
-        if (!$tienePreguntasDisponibles) {
-            $data["error"] = "No tienes más preguntas disponibles";
-            $this->presenter->show("error", $data);
-            return;
-        }
-
-        if (!isset($_SESSION["contadorCorrectas"])) {
-            $_SESSION["contadorCorrectas"] = 0;
-            $_SESSION["puntaje"] = 0;
-        }
-
-        $idPartida = $_SESSION["idPartida"];
-        $juego = $this->juegoModel->continuar($usuarioActual["id"], $idPartida);
-
-        $data = [
-            "nombre" => $usuarioActual["nombre"],
-            "id_usuario" => $usuarioActual["id"],
-            "pregunta" => $juego["pregunta"],
-            "respuestas" => $juego["respuestas"],
-        ];
-
-        $this->presenter->show("juego", $data);
-    }
 
     // Método para controlar y usar en desarrollo
     public function status(): void
@@ -177,11 +147,11 @@ class JuegoController
         $idUsuario = $_SESSION["usuario"]["id"];
         $idPartida = $_SESSION["idPartida"];
 
-
-        $pregunta = $this->juegoModel->getPreguntaPorId($preguntaId);
-        $respuestas = $this->juegoModel->getRespuestasDePregunta($pregunta["id"]);
+        $pregunta = $this->model->getPreguntaPorId($preguntaId);
+        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
 
         $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+        unset($_SESSION["id_pregunta"]);
 
         if (!empty($estado)) {
             // Si responde bien, contador y puntaje actualizado
@@ -193,6 +163,7 @@ class JuegoController
             $this->juegoModel->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
+            unset($_SESSION["id_partida"]);
             $this->finalizarJuego();
             return;
         }
@@ -200,13 +171,13 @@ class JuegoController
 
         // Flujo por si responde bien y todavía no llegó al máximo contador
         // $this->redireccionar("juego");
-        $result = $this->juegoModel->guardarRespuesta(
-            $idUsuario, $preguntaId, $idPartida, true
+        $result = $this->model->guardarRespuesta(
+            $idUsuario, $preguntaId, $idPartida, 1
         );
 
         if ($result) {
             $data = [
-                "pregunta" => $pregunta["texto"],
+                "pregunta" => $pregunta["pregunta_str"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
                 "id" => $pregunta["id"],
