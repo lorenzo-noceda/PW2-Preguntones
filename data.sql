@@ -258,6 +258,36 @@ CREATE TABLE partida
 ALTER TABLE partida
     ADD COLUMN fecha_jugada TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
+-- 07/11/34
+
+ALTER TABLE usuario
+DROP FOREIGN KEY usuario_ciudad_fk;
+ALTER TABLE usuario
+    DROP COLUMN id_ciudad;
+DROP TABLE ciudad;
+ALTER TABLE usuario
+    ADD COLUMN latitud DECIMAL(10, 8) NULL,
+    ADD COLUMN longitud DECIMAL(11, 8) NULL;
+
+-- 10/11/24
+ALTER TABLE estado ADD COLUMN color VARCHAR(7);
+UPDATE estado SET color = '#28a745' WHERE descripcion = 'Aprobada';
+UPDATE estado SET color = '#6c757d' WHERE descripcion = 'Desactivada';
+UPDATE estado SET color = '#ffc107' WHERE descripcion = 'Pendiente';
+UPDATE estado SET color = '#dc3545' WHERE descripcion = 'Rechazada';
+UPDATE estado SET color = '#17a2b8' WHERE descripcion = 'Reportada';
+
+CREATE TABLE reporte (
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         texto TEXT NOT NULL,
+                         id_usuario INT NOT NULL,
+                         id_pregunta INT NOT NULL,
+                         FOREIGN KEY (id_usuario) REFERENCES usuario(id),
+                         FOREIGN KEY (id_pregunta) REFERENCES pregunta(id)
+);
+
+
+
 
 
 

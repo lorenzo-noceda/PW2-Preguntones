@@ -31,10 +31,25 @@
         </div>
     </nav>
 </header>
-<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4 d-flex flex-column gap-2 mx-auto">
+<main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
+            d-flex flex-column gap-2 mx-auto p-4">
+    <h3 class="text-center">¡Ups! Respuesta incorrecta</h3>
+    <div class="text-center py-5 px-3 fs-4 fw-semibold bg-danger-subtle rounded-4 mt-2
+                    d-flex flex-column gap-2">
+        {{#pregunta}}
+            <p class="m-0 p-0 ">{{pregunta}}</p>
+        {{/pregunta}}
+    </div>
+    <div class="d-flex align-items-center justify-content-center
+                    text-white bg-success rounded-4 position-relative p-3">
+        <p class="m-0 p-0 text-center fs-5 fw-semibold">{{respuesta_texto}}</p>
+        <div class="position-absolute checkImage">
+            <img src="/PW2-Preguntones/public/images/check.svg"
+                 alt="Check Image">
+        </div>
+    </div>
     <h1 class="text-center">¡Finalizaste tu partida!</h1>
     <div class="col-12 d-flex flex-column gap-2">
-        <!--   Muestro Puntaje     -->
         <div class="text-center col-12 py-5 fs-4 fw-semibold bg-dark-subtle rounded-4">
             <h2>La respuesta fue incorrecta</h2>
             <p>Tu puntaje acumulado fue de: {{puntaje}} puntos!</p>

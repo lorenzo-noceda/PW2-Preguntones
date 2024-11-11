@@ -14,6 +14,7 @@ include_once(__DIR__ . "/../controller/RegistroController.php");
 include_once(__DIR__ . "/../controller/LoginController.php");
 include_once(__DIR__ . "/../controller/PerfilController.php");
 include_once(__DIR__ . "/../controller/JuegoController.php");
+include_once(__DIR__ . "/../controller/AdminController.php");
 
 // Models
 include_once(__DIR__ . "/../model/UsuarioModel.php");
@@ -69,6 +70,13 @@ class Configuration
     public function getJuegoController()
     {
         return new JuegoController(
+            $this->getJuegoModel(),
+            $this->getPresenter());
+    }
+
+    public function getAdminController(): AdminController
+    {
+        return new AdminController(
             $this->getJuegoModel(),
             $this->getPresenter());
     }

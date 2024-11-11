@@ -36,11 +36,12 @@ class JuegoController
             $_SESSION["contadorCorrectas"] = 0;
             $_SESSION["puntaje"] = 0;
         }
-
+      
         $data = $this->model->empezar($usuarioActual["id"]);
 
         if(isset($data["id_pregunta"])){
             $_SESSION["id_pregunta"] = $data["id_pregunta"];
+
         }
 
         if(isset($data["id_partida"])){
@@ -64,25 +65,25 @@ class JuegoController
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
 
-        $cantidadDePartidas = $this->model->getPartidasDelUsuario($usuarioActual["id"]);
+        $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
         if (empty($cantidadDePartidas)) {
             $cantidadDePartidas = 0;
         } else {
             $cantidadDePartidas = count($cantidadDePartidas);
         }
 
-        $_SESSION["usuarios"] = $this->model->getUsuariosTest();
+        $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
 
         $data = [
             "texto" => "Hola mundo",
-            "respondidas" => $this->model->getRespondidasDeUsuario($usuarioActual["id"]),
-            "todas" => $this->model->getCantidadPreguntasBD(),
-            "correctas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
-            "malas" => $this->model->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
+            "respondidas" => $this->juegoModel->getRespondidasDeUsuario($usuarioActual["id"]),
+            "todas" => $this->juegoModel->getCantidadPreguntasBD(),
+            "correctas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
+            "malas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
             "usuarios" => $_SESSION["usuarios"],
-            "partidasJugadas" => $this->model->getPartidas(),
-            "ranking" => $this->model->getRanking()
+            "partidasJugadas" => $this->juegoModel->getPartidas(),
+            "ranking" => $this->juegoModel->getRanking()
         ];
         $this->presenter->show("admin", $data);
     }
@@ -90,7 +91,7 @@ class JuegoController
     public function cambiarPerfil()
     {
         $id = $_GET["id"];
-        $usuarios =  $_SESSION["usuarios"];
+        $usuarios = $_SESSION["usuarios"];
         foreach ($usuarios as $usuario) {
             if ($usuario["id"] == $id) {
                 $usuario["verificado"] = true;
@@ -99,7 +100,35 @@ class JuegoController
                 $this->redireccionar("home");
             }
         }
+    }
 
+    public function reportar()
+    {
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+        $idPreguntaReporte = $_GET["id"];
+        $data["pregunta"] = $this->juegoModel->getPreguntaPorId($idPreguntaReporte);
+        $this->presenter->show("reportePregunta", $data);
+    }
+
+    public function enviarReporte()
+    {
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $idPregunta = $_POST['id'];
+            $stringQueja = $_POST['queja'];
+            $result = $this->juegoModel->reportar(
+                $usuarioActual["id"],
+                $idPregunta,
+                $stringQueja);
+
+            if ($result) {
+                echo "reportada cheto pa";
+            } else {
+                echo "no reportada";
+            }
+        }
     }
 
 
@@ -124,14 +153,14 @@ class JuegoController
         $estado = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
         unset($_SESSION["id_pregunta"]);
 
-        if ($estado) {
+        if (!empty($estado)) {
             // Si responde bien, contador y puntaje actualizado
             // Si llegó al máximo contador, corta
             $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
             $_SESSION["puntaje"] += 10;
         } else {
             // Si responde mal se termina
-            $this->model->guardarRespuesta(
+            $this->juegoModel->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
             unset($_SESSION["id_partida"]);
@@ -151,6 +180,8 @@ class JuegoController
                 "pregunta" => $pregunta["pregunta_str"],
                 "correctas" => $_SESSION["contadorCorrectas"],
                 "puntaje" => $_SESSION["puntaje"],
+                "id" => $pregunta["id"],
+                "respuesta_texto" => $estado,
             ];
             $this->presenter->show("despuesDePregunta", $data);
         } else {
@@ -160,16 +191,17 @@ class JuegoController
     }
 
     // Métodos solo para desarrollo
-    public function resetPartidasJugadas () {
+    public function resetPartidasJugadas()
+    {
         $idUsuario = $_SESSION["usuario"]["id"];
-        $this->model->resetPartidasDelUsuario($idUsuario);
+        $this->juegoModel->resetPartidasDelUsuario($idUsuario);
         $this->redireccionar("juego/status");
     }
 
     public function resetRespondidasDelUsuario()
     {
         $idUsuario = $_SESSION["usuario"]["id"];
-        $this->model->resetUsuario_Pregunta($idUsuario);
+        $this->juegoModel->resetUsuario_Pregunta($idUsuario);
         $this->redireccionar("juego/status");
     }
 
@@ -178,33 +210,27 @@ class JuegoController
      * @param $idRespuestaDada
      * @return bool
      */
-    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): bool
+    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): mixed
     {
         if ($arrayRespuestas) {
             foreach ($arrayRespuestas as $r) {
                 if ((int)$r["respuesta_id"] == (int)$idRespuestaDada
                     && $r["esCorrecta"]) {
-                    return true;
+                    return $r["respuesta_str"];
                 }
             }
         }
         return false;
     }
 
-    public function reportar()
-    {
-        $idPreguntaReporte = $_GET["id"];
-        $data["id"] = $idPreguntaReporte;
-        $this->presenter->show("reportePregunta", $data);
-    }
 
     public function probandoDeGonza()
     {
         $data = [
-            "categorias" => $this->model->getCategorias(),
-            "estados" => $this->model->getEstados(),
-            "preguntas" => $this->model->getPreguntas1(),
-            "respuestas" => $this->model->getRespuestas()
+            "categorias" => $this->juegoModel->getCategorias(),
+            "estados" => $this->juegoModel->getEstados(),
+            "preguntas" => $this->juegoModel->getPreguntas1(),
+            "respuestas" => $this->juegoModel->getRespuestas()
         ];
         $this->presenter->show("vistaDePruebas", $data);
     }
@@ -242,7 +268,8 @@ class JuegoController
      */
     private function validarPreguntaRespuestaRecibidas(): array
     {
-        $params = isset($_POST["pregunta_id"]) && isset($_POST["respuesta_id"]);
+        $params = isset($_POST["pregunta_id"]) &&
+            isset($_POST["respuesta_id"]);
         if (!$params) {
             $_SESSION["error"] = "Ocurrió un error.";
             $this->redireccionar("home");
@@ -250,7 +277,7 @@ class JuegoController
             return
                 [
                     "pregunta_id" => $_POST["pregunta_id"],
-                    "respuesta_id" => $_POST["respuesta_id"]
+                    "respuesta_id" => $_POST["respuesta_id"],
                 ];
         }
     }
