@@ -24,7 +24,8 @@ class JuegoModel
         return $data;
     }
 
-    public function continuar ($idUsuario, $idPartida): array {
+    public function continuar($idUsuario, $idPartida): array
+    {
         $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
         $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
 
@@ -33,35 +34,21 @@ class JuegoModel
         return $data;
     }
 
-
-
-    public function getRespuestasDePreguntaTest($id)
+    public function reportar($idUsuario, $idPregunta, $stringTexto)
     {
-        $result = $this->getPreguntaPorIdTest($id);
-        if ($result["success"]) {
-            return $result["data"]["respuestas"];
-        } else return false;
-    }
-
-
-    // Metodo para probar mientras no este la DB establecida
-    public function getPreguntaPorIdTest($id)
-    {
-        $data = [];
-        $data["success"] = false;
-        $data["data"] = null;
-        foreach ($this->getPreguntas() as $pregunta) {
-            if ((int)$pregunta["pregunta"]["id"] == (int)$id) {
-                $data["data"] = $pregunta;
-                break;
+        $preguntaBuscada = $this->getPreguntaPorId($idPregunta);
+        $resultado = null;
+        if (!empty($preguntaBuscada)) {
+            $resultado = $this->insertReporte((int)$idUsuario, $idPregunta, $stringTexto);
+            if ($resultado) {
+                $resultado = $this->updateEstadoPregunta($idPregunta);
+                if ($resultado) {
+                    return true;
+                }
             }
         }
-        if ($data["data"] != null) {
-            $data["success"] = true;
-        }
-        return $data;
+        return false;
     }
-
 
     private function getPreguntaRandom($idUsuario)
     {
@@ -71,10 +58,26 @@ class JuegoModel
         return $preguntasDB[$indicePreguntaRandom];
     }
 
-
-    public function guardarResultados()
+    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida, $state)
     {
+        $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
 
+        if ($state && $result) {
+            // correcta y salio bien el insert
+            $result = $this->updatePartida($idUsuario, $idPartida, 10);
+        } else if (!$state && $result) {
+            // incorrecta y salio bien el insert
+            $result = $this->updatePartida($idUsuario, $idPartida, 0);
+        } else {
+            // aca no debería entrar
+        }
+        return $result;
+    }
+
+    private function resetearPreguntasRespondidasDelUsuario($idUsuario)
+    {
+        $this->eliminarPreguntasRespondidasDelUsuario($idUsuario);
+        return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
     }
 
     /** Calcula cuantas respondió el usuario de todas las preguntas.
@@ -87,14 +90,121 @@ class JuegoModel
         return $this->getCantidadPreguntasBD() - count($noRespondidas);
     }
 
-    public function guardarRespondida()
+    public function actualizarPregunta($data)
     {
+        $result = $this->updatePregunta(
+            $data["preguntaTexto"],
+            $data["idCategoria"],
+            $data["idPregunta"],
+        );
 
+        if ($result) {
+            $contador = $this->actualizarRespuestasDePregunta(
+                $data["idPregunta"],
+                $data["respuestas"],
+                $data["nroRespuestaCorrecta"]);
+            if ($contador == 4) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
+
+    // NUEVO PARA ACTUALIZAR PREGUNTA
+
+    private function updatePregunta(string $texto, int $idCategoria, int $idPregunta)
+    {
+        $q = "UPDATE pregunta 
+              SET texto = :texto,
+                  id_categoria = :categoria,
+                  id_estado = 2
+             WHERE id = :id";
+        $params = [
+            ["columna" => "texto", "valor" => $texto],
+            ["columna" => "categoria", "valor" => $idCategoria],
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
+    }
+
+    private function eliminarRespuestasDePregunta($idPregunta)
+    {
+        $q = "DELETE FROM respuesta WHERE id_pregunta = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "DELETE", $params);
+        return $result["success"];
+    }
+
+    private function insertRespuestasDePregunta(
+        $texto, $idPregunta, $esCorrecta = false)
+    {
+        $q = "INSERT INTO respuesta (texto, id_pregunta, esCorrecta)
+              VALUES (:texto, :id_pregunta, :esCorrecta)";
+        $params = [
+            ["columna" => "texto", "valor" => $texto],
+            ["columna" => "id_pregunta", "valor" => $idPregunta],
+            ["columna" => "esCorrecta", "valor" => $esCorrecta],
+        ];
+        $result = $this->database->query($q, "INSERT", $params);
+        return $result["success"];
+    }
+
+    private function actualizarRespuestasDePregunta(
+        int $idPregunta,
+        array $respuestasCrudo,
+        int $nroRespuestaCorrecta): int
+    {
+        $result = $this->eliminarRespuestasDePregunta($idPregunta);
+
+        $respuestas = [];
+        $counter = 0;
+        // crear el "objeto"
+        foreach ($respuestasCrudo as $r) {
+            $respuestas[] = [
+                "texto" => $r,
+                "esCorrecta" => false,
+                "marcador" => $counter++
+            ];
+        }
+        unset($r);
+
+        $contadorInsertsCorrectos = 0;
+
+        if ($result) {
+            // asignarle true a la que va
+            foreach ($respuestas as &$r) {
+                if ($r["marcador"] == $nroRespuestaCorrecta) {
+                    $r["esCorrecta"] = true;
+                    break;
+                }
+            }
+            unset($r);
+
+            foreach ($respuestas as $r) {
+                $ok = $this->insertRespuestasDePregunta(
+                    $r["texto"], $idPregunta, $r["esCorrecta"]);
+                if ($ok) {
+                    $contadorInsertsCorrectos++;
+                }
+            }
+            unset($r);
+
+        }
+        return $contadorInsertsCorrectos;
+    }
+
+
+    // FIN DE LO NUEVO
 
     // Métodos para desarrollo
 
-    public function getUsuariosTest () {
+    public function getUsuariosTest()
+    {
         $q = "SELECT u.* FROM usuario u
               JOIN jugador j ON u.id = j.id";
         $result = $this->database->query($q, 'MULTIPLE', []);
@@ -104,7 +214,8 @@ class JuegoModel
         return $result;
     }
 
-    public function resetPartidasDelUsuario ($idUsuario) {
+    public function resetPartidasDelUsuario($idUsuario)
+    {
         $q = "DELETE FROM partida
               WHERE jugador_id = :idUsuario";
         $params = [
@@ -125,7 +236,107 @@ class JuegoModel
         return $result["success"];
     }
 
+    public function resetReportes()
+    {
+        $q = "TRUNCATE TABLE reporte";
+        $result = $this->database->query($q, 'UPDATE', []);
+        if ($result["success"]) {
+            $q = "UPDATE pregunta
+                  SET id_estado = 1
+                  WHERE id != 999";
+            return $this->database->query($q, 'UPDATE', [])["success"];
+        }
+        return false;
+    }
+
     // CONSULTAS A LA BASE DE DATOS
+    // Getters, inserts, updates, deletes
+    // getCategoriasMenosLaDePregunta(idPregunta)
+    // getReporteConId(id)
+    // getReportes()
+    // getPreguntas() todas
+    // getCategorias()
+    // getPartidas()
+    // getRanking()
+    // getPartidasDelUsuario(id)
+    // getEstados()
+    // obtenerRespondidasMalasBuenas(id)
+    // tienePreguntas(id)
+    // getPreguntaPorId(id)
+    // getRespuestasDePregunta(id)
+    // getCantidadPreguntasBD()
+    // obtenerPreguntasNoRespondidasDelUsuario(id)
+    // insertPartida(id)
+    // insertRespuesta(idPreg,idUser,State)
+    // insertReporte(iduser,idPreg,texto)
+    // updatePartida(idUsuario,idPartida,puntos)
+    // updateEstadoPregunta(idPregunta)
+    // desactivarPregunta(idPregunta)
+    // eliminarPreguntasRespondidasDelUsuario(id)
+
+    public function getCategoriasMenosLaDePregunta($idPregunta)
+    {
+        $q = "SELECT c.* FROM categoria c
+              JOIN pregunta p ON p.id_categoria != c.id
+              WHERE p.id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => (int)$idPregunta]
+        ];
+        $result = $this->database->query($q, 'MULTIPLE', $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    public function getReportesDePreguntaConId($idPregunta)
+    {
+        $q = "SELECT r.* ,
+              p.texto AS pregunta
+              FROM pregunta AS p
+              JOIN reporte r ON p.id = r.id_pregunta
+              WHERE p.id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => (int)$idPregunta]
+        ];
+        $result = $this->database->query($q, "MULTIPLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
+    public function getReportes()
+    {
+        $q = "SELECT r.* ,
+              p.texto AS pregunta,
+              COUNT(*) AS cantidad_reportes
+              FROM reporte AS r
+              JOIN pregunta p ON p.id = r.id_pregunta
+              GROUP BY r.id_pregunta";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
+    public function getPreguntas()
+    {
+        $q = "SELECT p.*, 
+              e.descripcion AS estado,
+              e.color as estadoColor,
+              c.descripcion AS categoria,
+              c.color AS color
+              FROM pregunta p
+              JOIN estado e ON p.id_estado = e.id
+              JOIN categoria c ON c.id = p.id_categoria;";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
 
     public function getCategorias()
     {
@@ -138,7 +349,8 @@ class JuegoModel
         return $result;
     }
 
-    public function getPartidas () {
+    public function getPartidas()
+    {
         $q = "SELECT p.id, u.username as jugador_id, p.puntaje
               FROM partida p
               JOIN usuario u ON p.jugador_id = u.id";
@@ -150,7 +362,8 @@ class JuegoModel
         }
     }
 
-    public function getRanking () {
+    public function getRanking()
+    {
         $q = "SELECT 
                     u.username, 
                     u.id AS usuario_id,
@@ -166,22 +379,6 @@ class JuegoModel
         } else {
             return $result;
         }
-    }
-
-    /** Crear nueva partida.
-     * @param $idUsuario
-     * @return mixed
-     */
-    public function insertPartida($idUsuario): mixed
-    {
-        $q = "INSERT INTO partida (jugador_id, puntaje) VALUES (:id,0)";
-        $params = [
-            ["columna" => "id", "valor" => $idUsuario]
-        ];
-        $result = $this->database->query($q, 'INSERT', $params);
-        if ($result["success"]) {
-            return $this->database->getUltimoIdGenerado();
-        } else return false;
     }
 
     /** Obtener partidas de un usuario por id.
@@ -241,7 +438,6 @@ class JuegoModel
             return $data;
         }
         return $result;
-
     }
 
     public function tienePreguntas($idUsuario): bool
@@ -253,57 +449,13 @@ class JuegoModel
         return false;
     }
 
-    public function guardarRespuesta($idUsuario, $idPregunta, $idPartida,$state)
-    {
-        $result = $this->insertRespuesta($idUsuario, $idPregunta, $state);
-
-        if ($state && $result) {
-            // correcta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, $idPartida, 10);
-        } else if (!$state && $result) {
-            // incorrecta y salio bien el insert
-            $result = $this->updatePartida($idUsuario, $idPartida, 0);
-        } else {
-            // aca no debería entrar
-        }
-        return $result;
-    }
-
-    private function updatePartida($idUsuario, $idPartida, $puntos)
-    {
-        $puntos = (int)$puntos;
-        $q = "UPDATE partida
-              SET puntaje = puntaje + :puntaje
-              WHERE jugador_id = :id AND id = :partidaId";
-        $params = [
-            ["columna" => "id", "valor" => $idUsuario],
-            ["columna" => "puntaje", "valor" => $puntos],
-            ["columna" => "partidaId", "valor" => $idPartida],
-        ];
-        $result = $this->database->query($q, 'UPDATE', $params);
-        return $result["success"];
-    }
-
-    public function insertRespuesta($idUsuario, $idPregunta, $state)
-    {
-        $q = "INSERT INTO usuario_pregunta 
-              (usuario_id, pregunta_id, respondida_correctamente) 
-              VALUES (:idUsuario, :idPregunta, :respondioBien)";
-        $params = [
-            ["columna" => "idUsuario", "valor" => $idUsuario],
-            ["columna" => "idPregunta", "valor" => $idPregunta],
-            ["columna" => "respondioBien", "valor" => $state]
-        ];
-        $result = $this->database->query($q, 'INSERT', $params);
-        return $result["success"];
-    }
-
-
     public function getPreguntaPorId($id)
     {
-        $q = "SELECT *
-              FROM pregunta
-              WHERE id = :id";
+        $q = "SELECT p.*,
+              c.descripcion AS categoria
+              FROM pregunta AS p
+              JOIN categoria c ON p.id_categoria = c.id
+              WHERE p.id = :id";
         $params = [
             ["columna" => "id", "valor" => $id]
         ];
@@ -355,16 +507,94 @@ class JuegoModel
         $result = $this->database->query($q, 'MULTIPLE', $params);
         if ($result["success"] && !empty($result["data"])) {
             return $result["data"];
-        } elseif($result["success"]){
+        } elseif ($result["success"]) {
             return $this->resetearPreguntasRespondidasDelUsuario($idUsuario);
         }
         return $result;
     }
 
-    private function resetearPreguntasRespondidasDelUsuario($idUsuario)
+    /** Crear nueva partida.
+     * @param $idUsuario
+     * @return mixed
+     */
+    public function insertPartida($idUsuario): mixed
     {
-        $this->eliminarPreguntasRespondidasDelUsuario($idUsuario);
-        return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+        $q = "INSERT INTO partida (jugador_id, puntaje) VALUES (:id,0)";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($q, 'INSERT', $params);
+        if ($result["success"]) {
+            return $this->database->getUltimoIdGenerado();
+        } else return false;
+    }
+
+    public function insertRespuesta($idUsuario, $idPregunta, $state)
+    {
+        $q = "INSERT INTO usuario_pregunta 
+              (usuario_id, pregunta_id, respondida_correctamente) 
+              VALUES (:idUsuario, :idPregunta, :respondioBien)";
+        $params = [
+            ["columna" => "idUsuario", "valor" => $idUsuario],
+            ["columna" => "idPregunta", "valor" => $idPregunta],
+            ["columna" => "respondioBien", "valor" => $state]
+        ];
+        $result = $this->database->query($q, 'INSERT', $params);
+        return $result["success"];
+    }
+
+    public function insertReporte($idUsuario, $idPregunta, $texto)
+    {
+        $q = "INSERT INTO reporte 
+              (texto, id_usuario, id_pregunta) 
+              VALUES (:texto, :idUsuario, :idPregunta)";
+        $params = [
+            ["columna" => "texto", "valor" => $texto],
+            ["columna" => "idUsuario", "valor" => $idUsuario],
+            ["columna" => "idPregunta", "valor" => $idPregunta]
+        ];
+        $result = $this->database->query($q, 'INSERT', $params);
+        return $result["success"];
+    }
+
+
+    private function updatePartida($idUsuario, $idPartida, $puntos)
+    {
+        $puntos = (int)$puntos;
+        $q = "UPDATE partida
+              SET puntaje = puntaje + :puntaje
+              WHERE jugador_id = :id AND id = :partidaId";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario],
+            ["columna" => "puntaje", "valor" => $puntos],
+            ["columna" => "partidaId", "valor" => $idPartida],
+        ];
+        $result = $this->database->query($q, 'UPDATE', $params);
+        return $result["success"];
+    }
+
+    private function updateEstadoPregunta($idPregunta)
+    {
+        $q = "UPDATE pregunta
+              SET id_estado = 4
+              WHERE id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => $idPregunta]
+        ];
+        $result = $this->database->query($q, 'UPDATE', $params);
+        return $result["success"];
+    }
+
+    public function desactivarPregunta($idPregunta)
+    {
+        $q = "UPDATE pregunta
+              SET id_estado = 5
+              WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta, "tipo" => "int"],
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
     }
 
     private function eliminarPreguntasRespondidasDelUsuario($idUsuario)

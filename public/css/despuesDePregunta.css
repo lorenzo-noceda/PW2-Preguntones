@@ -1,0 +1,9 @@
+.checkImage {
+    width: 30px !important;
+    right: 1rem !important;
+}
+
+.checkImage img {
+    color: #fff;
+    width: 100%;
+}
