@@ -333,5 +333,22 @@ class UsuarioModel
         return $this->getUsuarioPorCorreo($correo) != null;
     }
 
+    public function guardarSugerencia($idUsuario, $pregunta, $respuestas): bool
+    {
+        $query = "
+        INSERT INTO pregunta_sugerida (usuario_id, pregunta, respuesta_correcta, respuesta_incorrecta_1, respuesta_incorrecta_2, respuesta_incorrecta_3)
+        VALUES (:usuario_id, :pregunta, :respuesta_correcta, :respuesta_incorrecta_1, :respuesta_incorrecta_2, :respuesta_incorrecta_3)";
+        $params = [
+            ["columna" => "usuario_id", "valor" => $idUsuario],
+            ["columna" => "pregunta", "valor" => $pregunta],
+            ["columna" => "respuesta_correcta", "valor" => $respuestas['correcta']],
+            ["columna" => "respuesta_incorrecta_1", "valor" => $respuestas['incorrecta1']],
+            ["columna" => "respuesta_incorrecta_2", "valor" => $respuestas['incorrecta2']],
+            ["columna" => "respuesta_incorrecta_3", "valor" => $respuestas['incorrecta3']],
+        ];
+        $result = $this->database->query($query, 'INSERT', $params);
+        return $result["success"];
+    }
+
 
 }
