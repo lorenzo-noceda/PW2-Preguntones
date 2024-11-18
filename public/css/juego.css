@@ -10,3 +10,13 @@
     word-wrap: break-word;
     white-space: normal;
 }
+
+.checkImage {
+    width: 30px !important;
+    right: 1rem !important;
+    position: absolute;
+}
+
+.checkImage img {
+    width: 100%;
+}
