@@ -31,35 +31,20 @@ class JuegoController
         // Validar usuario en sesión y validación de correo.
         $usuarioActual = $this->validarUsuario();
         $this->validarActivacion($usuarioActual);
-        $idPregunta = $_SESSION["id_pregunta"] ?? null;
-
         // Validar contador correctas y puntaje.
-        if (!isset($_SESSION["contadorCorrectas"])) {
-            $_SESSION["contadorCorrectas"] = 0;
-            $_SESSION["puntaje"] = 0;
-        }
+        $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] ?? 0;
+        $_SESSION["puntaje"] = $_SESSION["puntaje"] ?? 0;
 
-        $data = $this->model->empezar($usuarioActual["id"], $idPregunta);
+        $data = $this->model->empezar($usuarioActual["id"], $_SESSION["id_pregunta"] ?? null);
 
-        if (isset($data["id_pregunta"])) {
-            $_SESSION["id_pregunta"] = $data["id_pregunta"];
-
-        }
-        if (isset($data["id_partida"])) {
-            $_SESSION["id_partida"] = $data["id_partida"];
-        }
-
+        $_SESSION["id_pregunta"] = $data["id_pregunta"] ?? $_SESSION["id_pregunta"];
+        $_SESSION["id_partida"] = $data["id_partida"] ?? $_SESSION["id_partida"];
         // Guardar para verla como resultado (malo/bueno)
         $_SESSION["pregunta"] = $data["pregunta"];
 
-
-        $data = [
-            "nombre" => $usuarioActual["nombre"],
-            "id_usuario" => $usuarioActual["id"],
-            "pregunta" => $data["pregunta"],
-            "respuestas" => $data["respuestas"],
-        ];
-
+        $data +=
+            ["nombre" => $usuarioActual["nombre"],
+             "id_usuario" => $usuarioActual["id"]];
         $this->presenter->show("juego", $data);
     }
 
@@ -113,8 +98,14 @@ class JuegoController
     // Guarda puntaje y contador
     // Guarda como fue respondida la pregunta // in progress...
     // TODO: sacar if's del controlador y mandarlos al modelo
+
     public function validarRespuesta()
     {
+
+
+        // PROBAR QUE ANDE TODO BIEN
+
+
         unset($_SESSION["id_pregunta"]);
         // Valido ingreso por $_POST
         $parametros = $this->validarPreguntaRespuestaRecibidas();
@@ -123,23 +114,23 @@ class JuegoController
         $preguntaId = $parametros["pregunta_id"];
         $respuestaElegidaId = $parametros["respuesta_id"];
         $idUsuario = $_SESSION["usuario"]["id"];
-        $idPartida = $_SESSION["idPartida"] ?? null;
+        $idPartida = $_SESSION["id_partida"];
 
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
         $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
 
         $respuesta = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+        $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] ?? null;
+        $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] ?? null;
 
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] != null ? $respuesta["respuestaCorrecta_str"] : null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] != null ? $respuesta["respuestaIncorrecta_str"] : null;
+        $error = $this->model->actualizarRespondidas($idUsuario, $preguntaId);
+        if($error){
+            $this->empezar();
+        }
 
-        if ($respuesta["respondioBien"]) {
-            // Si responde bien, contador y puntaje actualizado
-            // Si llegó al máximo contador, corta
-            $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
-            $_SESSION["puntaje"] += 10;
-        } else {
-            // Si responde mal se termina
+        if($respuesta["respondioBien"] === false){
             $this->model->guardarRespuesta(
                 $idUsuario, $pregunta["id"], $idPartida, 0
             );
@@ -148,7 +139,9 @@ class JuegoController
             return;
         }
 
-        // Flujo por si responde bien.
+        $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] + 1;
+        $_SESSION["puntaje"] += 10;
+        $this->model->actualizarAcertadas($idUsuario, $preguntaId);
         $result = $this->model->guardarRespuesta(
             $idUsuario, $preguntaId, $idPartida, 1
         );
@@ -202,34 +195,33 @@ class JuegoController
     }
 
     /** Valida si la respuesta es de la pregunta y si la respuesta es correcta.
-     * @param $arrayRespuestas
+     * @param $respuestas
      * @param $idRespuestaDada
      * @return bool
      */
-    private function validarRespuestaUsuario($arrayRespuestas, $idRespuestaDada): array
-    {
-        $respuesta = [];
-        $respuesta["respondioBien"] = false;
 
-        if ($arrayRespuestas) {
-            foreach ($arrayRespuestas as $r) {
-                // Comparar si id de respuesta coincide con alguna del array
-                // Además verificamos si es la misma id, si es correcta
-                if ((int)$r["respuesta_id"] == (int)$idRespuestaDada) {
-                    if ($r["esCorrecta"]) {
-                        $respuesta["respondioBien"] = true;
-                        $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
-                        $respuesta["respuestaIncorrecta_str"] = null;
-                        break;
-                    } else {
-                        $respuesta["respuestaIncorrecta_str"] = $r["respuesta_str"];
-                    }
+    private function validarRespuestaUsuario($respuestas, $idRespuestaDada): array
+    {
+        $respuesta = [
+            "respondioBien" => false,
+            "respuestaIncorrecta_str" => null
+        ];
+        foreach ($respuestas as $r) {
+            $esCorrecta = (bool) $r["esCorrecta"];
+            $idRespuesta = $r["respuesta_id"];
+
+            if($idRespuesta == $idRespuestaDada){
+                if($esCorrecta){
+                    $respuesta["respondioBien"] = true;
+                    $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
+                    break;
                 } else {
-                    if ($r["esCorrecta"]) {
-                        $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
-                    }
+                    $respuesta["respuestaIncorrecta_str"] = $r["respuesta_str"];
                 }
             }
+            // Captura la correcta en el caso que el usuario responda erroneamente
+            if($esCorrecta)
+                $respuesta["respuestaCorrecta_str"] = $r["respuesta_str"];
         }
         return $respuesta;
     }

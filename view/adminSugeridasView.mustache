@@ -10,7 +10,7 @@
     <!--  CSS GENERAL   -->
     <link href="/PW2-Preguntones/public/css/main.css" rel="stylesheet">
     <!--  CSS PERFIL   -->
-    <link href="/PW2-Preguntones/public/css/home.css" rel="stylesheet">
+    <!--    <link href="/PW2-Preguntones/public/css/home.css" rel="stylesheet">-->
     <title>Home</title>
 </head>
 <body>
@@ -28,36 +28,39 @@
         </a>
         <div class="col-3 d-flex justify-content-end">
             <a href="/PW2-Preguntones/juego/status?id={{id_usuario}}"
-               class="userImageContainer">
+            class="userImageContainer">
             <img src="/PW2-Preguntones/public/images/info.svg"/>
             </a>
             <a href="/PW2-Preguntones/perfil?id={{id_usuario}}"
-               class="userImageContainer">
+            class="userImageContainer">
             <img src="/PW2-Preguntones/public/images/user.png"/>
             </a>
         </div>
     </nav>
 </header>
-<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-4
-            p-2 d-flex flex-column mx-auto justify-content-center">
+<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-7
+            p-2 d-flex flex-column mx-auto">
     <div class="d-flex gap-2 flex-column mx-auto align-items-center">
-        <h1>¡Bienvenido {{nombre}}!</h1>
-        <div class="col-12 d-flex flex-column gap-2">
-            <a href="/PW2-Preguntones/juego/empezar" class="btn btn-success fs-5">
-                Jugar
-            </a>
-            <a href="/PW2-Preguntones/home/ranking" class="btn btn-secondary">
-                Ranking
-            </a>
-            <a href="/PW2-Preguntones/admin" class="btn btn-secondary">
-                Administración
-            </a>
-            <a href="/PW2-Preguntones/juego/reportar?id=1" class="btn btn-secondary">
-                Reporte test
-            </a>
-            <a href="/PW2-Preguntones/home/sugerir" class="btn btn-secondary">
-                Sugerir pregunta
-            </a>
+        <h1>Sugerencias</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="table-primary text-center">
+                <tr>
+                    <th>ID</th>
+                    <th>Pregunta</th>
+                    <th>Respuestas</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                {{#sugeridas}}
+                    <tbody>
+                    <tr>
+                        <td>{{id}}</td>
+                        <td>{{texto}}</td>
+                    </tr>
+                    </tbody>
+                {{/sugeridas}}
+            </table>
         </div>
     </div>
 </main>
