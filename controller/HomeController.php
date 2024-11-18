@@ -48,10 +48,11 @@ class HomeController
     public function sugerir(): void
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
+        $data["categorias"]=$this->model->getCategorias();
         if ($usuarioActual == null) {
             $this->redireccionar("login");
         } else {
-            $this->presenter->show("sugerirPregunta",[]);
+            $this->presenter->show("sugerirPregunta",$data);
         }
     }
 
@@ -59,13 +60,14 @@ class HomeController
         $usuarioActual = $_SESSION["usuario"] ?? null;
         if($_SERVER["REQUEST_METHOD"] === 'POST' && $usuarioActual){
             $pregunta=$_POST["pregunta"];
+            $categoria=$_POST["categoria"];
             $respuestas=[
                 'incorrecta1'=>$_POST['respuesta1'],
                 'incorrecta2'=>$_POST['respuesta2'],
                 'incorrecta3'=>$_POST['respuesta3'],
                 'correcta'=>$_POST['respuestaCorrecta'],
                 ];
-            $result=$this->model->guardarSugerencia($usuarioActual["id"],$pregunta,$respuestas);
+            $result=$this->model->guardarSugerencia($pregunta, $categoria,$respuestas);
 
             if($result){
                 echo "se mando la sugerencia padre";

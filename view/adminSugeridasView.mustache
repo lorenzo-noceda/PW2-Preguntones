@@ -38,39 +38,32 @@
         </div>
     </nav>
 </header>
-<main class="ccol-12 col-sm-8 col-md-7 col-lg-5 col-xl-4
-            p-4 d-flex flex-column mx-auto gap-4">
-        <h3>Sugerir pregunta</h3>
-        <form class="col-12 d-flex flex-column gap-3" method="POST" action="/PW2-preguntones/home/enviarSugerencia">
-            <label for="pregunta">Pregunta:</label>
-            <input type="text" id="pregunta" name="pregunta" required><br>
-
-            <label for="respuesta1">Respuesta incorrecta 1:</label>
-            <input type="text" id="respuesta1" name="respuesta1" required><br>
-
-            <label for="respuesta2">Respuesta incorrecta 2:</label>
-            <input type="text" id="respuesta2" name="respuesta2" required><br>
-
-            <label for="respuesta3">Respuesta incorrecta 3:</label>
-            <input type="text" id="respuesta3" name="respuesta3" required><br>
-
-            <label for="respuestaCorrecta">Respuesta correcta:</label>
-            <input type="text" id="respuestaCorrecta" name="respuestaCorrecta" required><br>
-
-            <label for="categoria">Categoría:</label>
-            <select name="categoria" id="categoria" required>
-                {{#categorias}}
-                    <option value="{{id}}">{{descripcion}}</option>
-                {{/categorias}}
-            </select>
-
-
-            <button type="submit">Enviar Sugerencia</button>
-        </form>
+<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-7
+            p-2 d-flex flex-column mx-auto">
+    <div class="d-flex gap-2 flex-column mx-auto align-items-center">
+        <h1>Sugerencias</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="table-primary text-center">
+                <tr>
+                    <th>ID</th>
+                    <th>Pregunta</th>
+                    <th>Respuestas</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                {{#sugeridas}}
+                    <tbody>
+                    <tr>
+                        <td>{{id}}</td>
+                        <td>{{texto}}</td>
+                    </tr>
+                    </tbody>
+                {{/sugeridas}}
+            </table>
+        </div>
+    </div>
 </main>
-
-
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>

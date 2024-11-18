@@ -68,6 +68,12 @@ class AdminController
         } else echo "error devuelta";
     }
 
+    public function sugeridas()
+    {
+        $data["sugeridas"] = $this->juegoModel->getSugeridas();
+        $this->presenter->show("adminSugeridas", $data);
+    }
+
     public function aprobar()
     {
 
