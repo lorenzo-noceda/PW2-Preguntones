@@ -286,6 +286,13 @@ CREATE TABLE reporte (
                          FOREIGN KEY (id_pregunta) REFERENCES pregunta(id)
 );
 
+ALTER TABLE usuario
+    ADD COLUMN cantidad_respondidas INT DEFAULT 0,
+    ADD COLUMN cantidad_acertadas INT DEFAULT 0;
+
+ALTER TABLE pregunta
+    ADD COLUMN cantidad_respondidas INT DEFAULT 0,
+    ADD COLUMN cantidad_acertadas INT DEFAULT 0;
 
 
 

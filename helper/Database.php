@@ -73,6 +73,20 @@ class Database
     {
         $this->cerrarConexion();
     }
+
+    public function beginTransaction() {
+        $this->conexion->beginTransaction();
+    }
+
+    // Confirma la transacción
+    public function commit() {
+        $this->conexion->commit();
+    }
+
+    // Revierte la transacción
+    public function rollBack() {
+        $this->conexion->rollBack();
+    }
 }
 ?>
 
