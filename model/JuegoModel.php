@@ -4,6 +4,7 @@ class JuegoModel
 {
 
     private $database;
+    CONST NIVEL_BAJO = "BAJO", NIVEL_MEDIO = "MEDIO", NIVEL_ALTO = "ALTO";
 
     public function __construct($database)
     {
@@ -18,16 +19,11 @@ class JuegoModel
         } else {
             $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
             $data["id_pregunta"] = $data["pregunta"]["id"];
+            $data["id_partida"] = $this->insertPartida($idUsuario);
         }
 
         $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
-
-        if(!$hayPregunta){
-            $idPartida = $this->insertPartida($idUsuario);
-            $data["id_partida"] = $idPartida;
-        }
-      
         return $data;
     }
   
@@ -52,6 +48,8 @@ class JuegoModel
     private function getPreguntaRandom($idUsuario)
     {
         // Functiona OK
+        $nivel = $this->obtenerNivelDeUsuario($idUsuario);
+        var_dump($nivel);
         $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
         $indicePreguntaRandom = array_rand($preguntasDB);
         return $preguntasDB[$indicePreguntaRandom];
@@ -73,10 +71,10 @@ class JuegoModel
         return $result;
     }
 
-    private function resetearPreguntasRespondidasDelUsuario($idUsuario)
+    private function resetearPreguntasRespondidas()
     {
-        $this->eliminarPreguntasRespondidasDelUsuario($idUsuario);
-        return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+        $q = "TRUNCATE TABLE usuario_pregunta";
+        $this->database->query($q, 'TRUNCATE', []);
     }
 
     /** Calcula cuantas respondió el usuario de todas las preguntas.
@@ -529,7 +527,8 @@ class JuegoModel
         if ($result["success"] && !empty($result["data"])) {
             return $result["data"];
         } elseif ($result["success"]) {
-            return $this->resetearPreguntasRespondidasDelUsuario($idUsuario);
+            $this->resetearPreguntasRespondidas();
+            return $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
         }
         return $result;
     }
@@ -588,22 +587,105 @@ class JuegoModel
         return $result["success"];
     }
 
-    private function eliminarPreguntasRespondidasDelUsuario($idUsuario)
-    {
-        $q = "DELETE FROM usuario_pregunta
-              WHERE usuario_id = :id";
+    /**
+     * @throws Exception
+     */
+    public function actualizarRespondidas($idUsuario, $idPregunta){
+        try {
+            $this->database->beginTransaction();
+            $this->actualizarRespondidasUsuario($idUsuario);
+            $this->actualizarRespondidasPregunta($idPregunta);
+            $this->database->commit();
+        } catch(Exception $e){
+            $this->database->rollBack();
+            throw new Exception($e->getMessage());
+        }
+    }
 
+    private function actualizarRespondidasUsuario($idUsuario){
+        $q = "UPDATE usuario SET cantidad_respondidas = cantidad_respondidas+1
+               WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
+        return $this->database->query($q, 'UPDATE', $params);
+    }
 
-        return $this->database->query($q, 'DELETE', $params);
+    private function actualizarRespondidasPregunta($idPregunta){
+        $q = "UPDATE pregunta SET cantidad_respondidas = cantidad_respondidas+1
+               WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta]
+        ];
+        return $this->database->query($q, 'UPDATE', $params);
+    }
+    public function actualizarAcertadas($idUsuario, $idPregunta){
+        $this->actualizarAcertadasUsuario($idUsuario);
+        $this->actualizarAcertadasPregunta($idPregunta);
+    }
+
+    private function actualizarAcertadasUsuario($idUsuario){
+        $q = "UPDATE usuario SET cantidad_acertadas = cantidad_acertadas+1
+               WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        return $this->database->query($q, 'UPDATE', $params);
+    }
+
+    private function actualizarAcertadasPregunta($idPregunta){
+        $q = "UPDATE pregunta SET cantidad_acertadas = cantidad_acertadas+1
+               WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta]
+        ];
+        return $this->database->query($q, 'UPDATE', $params);
     }
 
     // helpers de clase
     private function verVariable($data): void
     {
         echo '<pre>' . print_r($data, true) . '</pre>';
+    }
+
+    private function obtenerNivelDeUsuario($idUsuario){
+        $respondidas = $this->obtenerCantidadRespondidasPorUsuario($idUsuario);
+        if($respondidas < 10) {
+            var_dump("entro en el if");
+            var_dump($respondidas);
+            return self::NIVEL_MEDIO;
+        }
+        $acertadas = $this->obtenerCantidadAcertadasPorUsuario($idUsuario);
+        $nivelUsuario = $acertadas / $respondidas;
+        switch ($nivelUsuario) {
+            CASE $nivelUsuario < 0.33:
+                return self::NIVEL_BAJO;
+            CASE $nivelUsuario < 0.66:
+                return self::NIVEL_MEDIO;
+            DEFAULT:
+                return self::NIVEL_ALTO;
+        }
+
+    }
+
+    private function obtenerCantidadRespondidasPorUsuario($idUsuario){
+        $q = "SELECT cantidad_respondidas FROM usuario 
+               WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $resultado = $this->database->query($q, 'SINGLE', $params);
+        return $resultado["data"]["cantidad_respondidas"] ?? 0;
+    }
+
+    private function obtenerCantidadAcertadasPorUsuario($idUsuario){
+        $q = "SELECT cantidad_acertadas FROM usuario 
+               WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $resultado = $this->database->query($q, 'SINGLE', $params);
+        return $resultado["data"]["cantidad_acertadas"] ?? 0;
     }
 
 }
