@@ -253,6 +253,7 @@ class JuegoModel
     // getCategoriasMenosLaDePregunta(idPregunta)
     // getReporteConId(id)
     // getReportes()
+    // getSugeridas()
     // getPreguntas() todas
     // getCategorias()
     // getPartidas()
@@ -313,6 +314,17 @@ class JuegoModel
               FROM reporte AS r
               JOIN pregunta p ON p.id = r.id_pregunta
               GROUP BY r.id_pregunta";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result;
+    }
+
+    public function getSugeridas()
+    {
+        $q = "SELECT * FROM pregunta
+              WHERE id_estado = 1";
         $result = $this->database->query($q, "MULTIPLE", []);
         if ($result["success"]) {
             return $result["data"];
