@@ -114,7 +114,6 @@ class AdminController
             $data["pregunta"] = $pregunta;
             $data["categorias"] = $categorias;
 
-
             $this->presenter->show("adminEditarPregunta", $data);
         }
 
@@ -140,7 +139,7 @@ class AdminController
         }
     }
 
-    private function getFormularioDataActualizarPregunta (): array
+    private function getFormularioDataActualizarPregunta(): array
     {
         return [
             "preguntaTexto" => $_POST["pregunta"],

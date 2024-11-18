@@ -49,6 +49,51 @@ class JuegoController
     }
 
 
+    public function cambiarPerfil()
+    {
+        $id = $_GET["id"];
+        $usuarios = $_SESSION["usuarios"];
+        foreach ($usuarios as $usuario) {
+            if ($usuario["id"] == $id) {
+                $usuario["verificado"] = true;
+                $_SESSION["usuario"] = $usuario;
+                unset($_SESSION["usuarios"]);
+                $this->redireccionar("home");
+            }
+        }
+    }
+
+    public function reportar()
+    {
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+        $idPreguntaReporte = $_GET["id"];
+        $data["pregunta"] = $this->model->getPreguntaPorId($idPreguntaReporte);
+        $this->presenter->show("reportePregunta", $data);
+    }
+
+    public function enviarReporte()
+    {
+        $usuarioActual = $this->validarUsuario();
+        $this->validarActivacion($usuarioActual);
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $idPregunta = $_POST['id'];
+            $stringQueja = $_POST['queja'];
+            $result = $this->model->reportar(
+                $usuarioActual["id"],
+                $idPregunta,
+                $stringQueja);
+
+            if ($result) {
+                echo "reportada cheto pa";
+            } else {
+                echo "no reportada";
+            }
+        }
+    }
+
+
+
     // Método de validación
     // Guarda puntaje y contador
     // Guarda como fue respondida la pregunta // in progress...
@@ -62,7 +107,6 @@ class JuegoController
 
 
         unset($_SESSION["id_pregunta"]);
-
         // Valido ingreso por $_POST
         $parametros = $this->validarPreguntaRespuestaRecibidas();
 
@@ -79,6 +123,8 @@ class JuegoController
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] ?? null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] ?? null;
 
+        $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] != null ? $respuesta["respuestaCorrecta_str"] : null;
+        $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] != null ? $respuesta["respuestaIncorrecta_str"] : null;
         $error = $this->model->actualizarRespondidas($idUsuario, $preguntaId);
         if($error){
             $this->empezar();
@@ -114,35 +160,6 @@ class JuegoController
             echo "error";
         }
 
-    }
-
-    public function reportar()
-    {
-        $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
-        $idPreguntaReporte = $_GET["id"];
-        $data["pregunta"] = $this->model->getPreguntaPorId($idPreguntaReporte);
-        $this->presenter->show("reportePregunta", $data);
-    }
-
-    public function enviarReporte()
-    {
-        $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $idPregunta = $_POST['id'];
-            $stringQueja = $_POST['queja'];
-            $result = $this->model->reportar(
-                $usuarioActual["id"],
-                $idPregunta,
-                $stringQueja);
-
-            if ($result) {
-                echo "reportada cheto pa";
-            } else {
-                echo "no reportada";
-            }
-        }
     }
 
     private
@@ -271,7 +288,20 @@ class JuegoController
     }
 
 
-
+//    private function finalizarJuego(): void
+//    {
+//        $data = [
+//            "puntaje" => $_SESSION["puntaje"],
+//            "pregunta" => $_SESSION["pregunta"]["pregunta_str"],
+//            "respuestaCorrecta" => "si",
+//            "respuestaElegida" => "no"
+//        ];
+//
+//        unset($_SESSION["contadorCorrectas"]);
+//        unset($_SESSION["puntaje"]);
+//
+//        $this->presenter->show("resultadoPartida", $data);
+//    }
 
     // Helpers de clase
 
