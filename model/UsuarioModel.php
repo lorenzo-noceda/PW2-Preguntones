@@ -30,25 +30,29 @@ class UsuarioModel
 
     public function guardarJugador($usuario)
     {
-        $id = $this->getUltimoIdGenerado();
+        $queryJugador = "
+        INSERT INTO jugador (id)
+        VALUES (:id)";
 
-        $emailUsuario = $usuario['email'];
-        $nombreUsuario = $usuario['nombre'];
-
-        $query = "
-                INSERT INTO jugador
-                    (id, verificado)
-                VALUES 
-                    (:id, :verificado)";
-        $params = [
-            ["columna" => "id", "valor" => $id],
-            ["columna" => "verificado", "valor" => 0],
+        $paramsJugador = [
+            ["columna" => "id", "valor" => $usuario['id']]
         ];
 
-        $this->enviarMailValidacion($emailUsuario, $nombreUsuario);
+        $resultJugador = $this->database->query($queryJugador, 'INSERT', $paramsJugador);
 
-        return $this->database->query($query, 'INSERT', $params);
+        if ($resultJugador["success"]) {
+            // Opcional: Actualizar estado de verificado
+            $this->actualizarEstadoVerificado($usuario['id']);
+            return ['success' => true, 'message' => 'Jugador registrado con éxito.'];
+        }
+
+        return ['success' => false, 'message' => 'Error al registrar el jugador.'];
     }
+
+
+
+
+
 
     public function enviarMailValidacion($emailUsuario, $nombreUsuario)
     {
@@ -69,9 +73,9 @@ class UsuarioModel
     {
         if ($idusuario != null) {
             $q = "
-            SELECT verificado 
-            FROM jugador
-            WHERE id = :id";
+        SELECT verificado 
+        FROM usuario
+        WHERE id = :id";
             $params = [
                 ["columna" => "id", "valor" => $idusuario],
             ];
@@ -90,9 +94,9 @@ class UsuarioModel
     public function validarJugador($id)
     {
         $query = "
-                UPDATE jugador
-                SET verificado = :verificado
-                WHERE id = :id";
+            UPDATE usuario
+            SET verificado = :verificado
+            WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $id],
             ["columna" => "verificado", "valor" => true],
@@ -104,6 +108,9 @@ class UsuarioModel
     {
         return $this->database->getUltimoIdGenerado();
     }
+
+
+
 
 
 
@@ -200,10 +207,11 @@ class UsuarioModel
     private function guardarUsuario($usuario)
     {
         $query = "
-                INSERT INTO usuario
-                    (nombre, apellido, username, email, password, anio_nacimiento, id_sexo, latitud, longitud)
-                VALUES 
-                    (:nombre, :apellido, :username, :email, :password, :anio_nacimiento, :id_sexo, :latitud, :longitud)";
+        INSERT INTO usuario
+            (nombre, apellido, username, email, password, anio_nacimiento, id_sexo, latitud, longitud, verificado)
+        VALUES 
+            (:nombre, :apellido, :username, :email, :password, :anio_nacimiento, :id_sexo, :latitud, :longitud, :verificado)";
+
         $params = [
             ["columna" => "nombre", "valor" => $usuario['nombre']],
             ["columna" => "apellido", "valor" => $usuario['apellido']],
@@ -213,7 +221,8 @@ class UsuarioModel
             ["columna" => "anio_nacimiento", "valor" => $usuario['anio_nacimiento']],
             ["columna" => "id_sexo", "valor" => $usuario['id_sexo']],
             ["columna" => "latitud", "valor" => $usuario['latitud']],
-            ["columna" => "longitud", "valor" => $usuario['longitud']]
+            ["columna" => "longitud", "valor" => $usuario['longitud']],
+            ["columna" => "verificado", "valor" => 0]
         ];
 
         $result = $this->database->query($query, 'INSERT', $params);
@@ -222,6 +231,7 @@ class UsuarioModel
         }
         return $result;
     }
+
 
     private function insertarJugador($idUsuario)
     {
@@ -268,10 +278,17 @@ class UsuarioModel
 
     public function getUsuarioPorUsername($username)
     {
-        $query = 'SELECT u.*, j.verificado 
-                  FROM usuario u 
-                  JOIN jugador j on u.id = j.id
-                  WHERE u.username = :username';
+        $query = '
+SELECT u.*, 
+       j.id AS jugador_id, 
+       e.id AS editor_id, 
+       a.id AS administrador_id 
+    FROM usuario u
+    LEFT JOIN jugador j ON u.id = j.id
+    LEFT JOIN editor e ON u.id = e.id
+    LEFT JOIN administrador a ON u.id = a.id
+    WHERE u.username = :username';
+
         $params = [
             ["columna" => "username", "valor" => $username],
         ];
@@ -328,15 +345,73 @@ class UsuarioModel
         return $this->getUsuarioPorUsername($username) != null;
     }
 
-
     public function existeYaElCorreo($correo): bool
     {
         return $this->getUsuarioPorCorreo($correo) != null;
     }
 
+    public function guardarSugerencia($idUsuario, $pregunta, $respuestas): bool
+    {
+        $query = "
+        INSERT INTO pregunta_sugerida (usuario_id, pregunta, respuesta_correcta, respuesta_incorrecta_1, respuesta_incorrecta_2, respuesta_incorrecta_3)
+        VALUES (:usuario_id, :pregunta, :respuesta_correcta, :respuesta_incorrecta_1, :respuesta_incorrecta_2, :respuesta_incorrecta_3)";
+        $params = [
+            ["columna" => "usuario_id", "valor" => $idUsuario],
+            ["columna" => "pregunta", "valor" => $pregunta],
+            ["columna" => "respuesta_correcta", "valor" => $respuestas['correcta']],
+            ["columna" => "respuesta_incorrecta_1", "valor" => $respuestas['incorrecta1']],
+            ["columna" => "respuesta_incorrecta_2", "valor" => $respuestas['incorrecta2']],
+            ["columna" => "respuesta_incorrecta_3", "valor" => $respuestas['incorrecta3']],
+        ];
+        $result = $this->database->query($query, 'INSERT', $params);
+        return $result["success"];
+    }
+
+    public function esAdmin($idUsuario) {
+        $query = "SELECT COUNT(*) AS total FROM administrador WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($query, "SINGLE", $params);
+
+        return $result['success'] && $result['data']['total'] > 0;
+    }
+
+    public function esEditor($idUsuario) {
+        $query = "SELECT COUNT(*) AS total FROM editor WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($query, "SINGLE", $params);
+
+        return $result['success'] && $result['data']['total'] > 0;
+    }
 
 
+    public function esJugador($idUsuario) {
+        $query = "SELECT COUNT(*) AS total FROM jugador WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+        $result = $this->database->query($query, "SINGLE", $params);
 
+        return $result['success'] && $result['data']['total'] > 0;
+    }
+
+    private function actualizarEstadoVerificado($idUsuario)
+    {
+        $query = "
+        UPDATE usuario
+        SET verificado = :verificado
+        WHERE id = :id";
+
+        $params = [
+            ["columna" => "verificado", "valor" => 1],
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+
+        return $this->database->query($query, 'UPDATE', $params);
+    }
 
 
 }

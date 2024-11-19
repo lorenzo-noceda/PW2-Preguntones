@@ -17,6 +17,8 @@ class HomeController
     public function list(): void
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
+        $rol = $_SESSION["rol"] ?? null;
+
         if ($usuarioActual == null) {
             $this->redireccionar("login");
         } else {
@@ -28,9 +30,17 @@ class HomeController
                 ];
                 $this->presenter->show("validacionCorreo", $data);
             } else {
+                // Procesar roles específicos
+                $esJugador = $rol === 'jugador';
+                $esEditor = $rol === 'editor';
+                $esAdmin = $rol === 'admin';
+
                 $data = [
                     "nombre" => $usuarioActual["nombre"],
                     "id_usuario" => $usuarioActual["id"],
+                    "esJugador" => $esJugador,
+                    "esEditor" => $esEditor,
+                    "esAdmin" => $esAdmin
                 ];
                 $this->presenter->show("home", $data);
             }

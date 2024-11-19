@@ -1,9 +1,9 @@
 <?php
 
 use JetBrains\PhpStorm\NoReturn;
-
 class LoginController
 {
+
     private $usuarioModelo;
     private $presenter;
 
@@ -42,9 +42,22 @@ class LoginController
             $usuario = $this->usuarioModelo->getUsuarioPorUsername($user);
             //$usuario["password"] == $pass
             //password_verify($pass, $usuario['password']) usar en segundo if cuando este hasheadas todas
-            if ($usuario != null && (password_verify($pass, $usuario['password']))) {
-                // Guardamos usuario en sesión
+            if ($usuario != null && password_verify($pass, $usuario['password'])) {
+                // Determinamos el rol basado en los IDs devueltos por la consulta
+                if (!is_null($usuario['administrador_id'])) {
+                    $rol = 'admin';
+                } elseif (!is_null($usuario['editor_id'])) {
+                    $rol = 'editor';
+                } elseif (!is_null($usuario['jugador_id'])) {
+                    $rol = 'jugador';
+                } else {
+                    $rol = 'sin_rol'; // Maneja el caso de usuarios sin rol asignado, si aplica
+                }
+
+                // Guardamos el usuario en sesion
                 $_SESSION['usuario'] = $usuario;
+                $_SESSION['rol'] = $rol;
+
                 // A casita perro
                 $this->redireccionar("home");
             } else {

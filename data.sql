@@ -294,6 +294,15 @@ ALTER TABLE pregunta
     ADD COLUMN cantidad_respondidas INT DEFAULT 0,
     ADD COLUMN cantidad_acertadas INT DEFAULT 0;
 
+ALTER TABLE usuario ADD COLUMN verificado TINYINT(1) DEFAULT 0;
+
+UPDATE usuario u
+    JOIN jugador j ON u.id = j.id
+SET u.verificado = j.verificado
+WHERE j.verificado IS NOT NULL;
+
+ALTER TABLE jugador DROP COLUMN verificado;
+
 
 
 
