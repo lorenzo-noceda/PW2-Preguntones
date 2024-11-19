@@ -9,7 +9,7 @@
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!--  CSS GENERAL   -->
     <link href="/PW2-Preguntones/public/css/main.css" rel="stylesheet">
-    <!--  CSS PERFIL   -->
+    <!--  CSS VER SUGERIDA   -->
     <!--    <link href="/PW2-Preguntones/public/css/home.css" rel="stylesheet">-->
     <title>Home</title>
 </head>
@@ -38,33 +38,44 @@
         </div>
     </nav>
 </header>
-<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-7
+<main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-4
             p-2 d-flex flex-column mx-auto">
     <div class="d-flex gap-2 flex-column mx-auto align-items-center">
-        <h1>Sugerencias</h1>
-        <div class="table-responsive">
+        <h1>Pregunta sugerida</h1>
+        {{#pregunta}}
+            <div class="d-flex gap-2">
+                <a class="btn btn-info"
+                   href="/PW2-Preguntones/admin/aprobar?id={{id}}">
+                Aprobar
+                </a>
+                <a class="btn btn-danger"
+                   href="/PW2-Preguntones/admin/rechazar?id={{id}}">
+                Rechazar
+                </a>
+                <a class="btn btn-success"
+                   href="/PW2-Preguntones/admin/desactivar?id={{id}}">
+                Desactivar
+                </a>
+            </div>
+        {{/pregunta}}
+        <div class="col-12">
             <table class="table table-bordered table-striped table-hover">
                 <thead class="table-primary text-center">
                 <tr>
-                    <th>ID</th>
-                    <th>Pregunta</th>
-                    <th>Acción</th>
+                    {{#pregunta}}
+                        <th>{{pregunta_str}}</th>
+                    {{/pregunta}}
                 </tr>
                 </thead>
-                {{#sugeridas}}
                     <tbody>
-                    <tr>
-                        <td>{{id}}</td>
-                        <td>{{texto}}</td>
-                        <td>
-                            <a class="btn btn-info"
-                               href="/PW2-Preguntones/admin/verSugerida?id={{id}}"
-                            >Ver
-                            </a>
-                        </td>
-                    </tr>
+                    {{#respuestas}}
+                        <tr>
+                            <td  class="{{#esCorrecta}}bg-success text-white{{/esCorrecta}}">
+                                {{respuesta_str}}
+                            </td>
+                        </tr>
+                    {{/respuestas}}
                     </tbody>
-                {{/sugeridas}}
             </table>
         </div>
     </div>

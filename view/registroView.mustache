@@ -85,35 +85,7 @@
                 <input type="hidden" name="longitud" id="longitud">
 
                 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc&callback=initMap" async defer></script>
-                <script>
-                    let map, marker;
-
-                    function initMap() {
-                        // Coordenadas iniciales del mapa
-                        const initialPosition = { lat: -34.668294397380265, lng:-58.5666306124492 };
-                        map = new google.maps.Map(document.getElementById("map"), {
-                            center: initialPosition,
-                            zoom: 14,
-                        });
-
-                        map.addListener("click", (event) => {
-                            const clickedLocation = event.latLng;
-
-                            if (!marker) {
-                                marker = new google.maps.Marker({
-                                    position: clickedLocation,
-                                    map: map,
-                                });
-                            } else {
-                                marker.setPosition(clickedLocation);
-                            }
-
-                            // Almacenar las coordenadas en los campos ocultos
-                            document.getElementById("latitud").value = clickedLocation.lat();
-                            document.getElementById("longitud").value = clickedLocation.lng();
-                        });
-                    }
-                </script>
+                <script src="/PW2-Preguntones/public/js/mapa.js"></script>
             </div>
         </div>
         <!--  SEXO   -->

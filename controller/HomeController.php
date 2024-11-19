@@ -3,12 +3,14 @@
 class HomeController
 {
 
-    private $model;
+    private $juegoModel;
+    private $usuarioModel;
     private $presenter;
 
-    public function __construct($model, $presenter)
+    public function __construct($juegoModel, $usuarioModel, $presenter)
     {
-        $this->model = $model;
+        $this->juegoModel = $juegoModel;
+        $this->usuarioModel = $usuarioModel;
         $this->presenter = $presenter;
     }
 
@@ -35,53 +37,70 @@ class HomeController
         }
     }
 
-    public function ranking () {
-        $data["ranking"] = $this->model->getRanking();
+    public function ranking()
+    {
+        $data["ranking"] = $this->usuarioModel->getRanking();
         $this->presenter->show("ranking", $data);
-    }
-
-    public function generarQr() {
-//        $qrParaGenerar = $_SESSION["qrParaGenerar"];
-//        $this->qrCodeGenerator::getQrCodeParaImg($qrParaGenerar);
     }
 
     public function sugerir(): void
     {
-        $usuarioActual = $_SESSION["usuario"] ?? null;
-        $data["categorias"]=$this->model->getCategorias();
-        if ($usuarioActual == null) {
-            $this->redireccionar("login");
+        $this->validarUsuario();
+        $data["categorias"] = $this->juegoModel->getCategorias();
+        $this->presenter->show("sugerirPregunta", $data);
+    }
+
+    public function enviarSugerencia(): void
+    {
+        $usuarioActual = $this->validarUsuario();
+        if ($_SERVER["REQUEST_METHOD"] === 'POST' && $usuarioActual) {
+            $pregunta = $_POST["pregunta"];
+            $categoria = $_POST["categoria"];
+            $respuestas = $this->obtenerRespuestasFormulario();
+            $result = $this->juegoModel->crearSugerencia($pregunta, $categoria, $respuestas);
+            if ($result) {
+                $this->presenter->show("mensajeSugerenciaRealizada");
+            } else {
+                $data["error"] = "Ups! ocurrió un error. Inténtalo de nuevo más tarde";
+                $this->presenter->show("error", $data);
+            }
         } else {
-            $this->presenter->show("sugerirPregunta",$data);
+            $this->redireccionar("login");
         }
     }
 
-    public function enviarSugerencia():void{
+    private function obtenerRespuestasFormulario()
+    {
+        return [
+            ['texto' => $_POST['respuesta1'], "esCorrecta" => false],
+            ['texto' => $_POST['respuesta2'], "esCorrecta" => false],
+            ['texto' => $_POST['respuesta3'], "esCorrecta" => false],
+            ['texto' => $_POST['respuestaCorrecta'], "esCorrecta" => true],
+        ];
+    }
+
+    private function validarUsuario(): array
+    {
         $usuarioActual = $_SESSION["usuario"] ?? null;
-        if($_SERVER["REQUEST_METHOD"] === 'POST' && $usuarioActual){
-            $pregunta=$_POST["pregunta"];
-            $categoria=$_POST["categoria"];
-            $respuestas=[
-                'incorrecta1'=>$_POST['respuesta1'],
-                'incorrecta2'=>$_POST['respuesta2'],
-                'incorrecta3'=>$_POST['respuesta3'],
-                'correcta'=>$_POST['respuestaCorrecta'],
-                ];
-            $result=$this->model->guardarSugerencia($pregunta, $categoria,$respuestas);
-
-            if($result){
-                echo "se mando la sugerencia padre";
-                $this->presenter->show("home",[]);
-            }else{
-                echo "no se mando nada";
-                $this->presenter->show("home",[]);
-            }
-
-        }else{
+        if ($usuarioActual == null) {
             $this->redireccionar("login");
         }
+        $this->validarActivacion($usuarioActual);
+        return $usuarioActual;
+    }
 
-
+    /**
+     * Valida que el usuario este verificado sino hace uso de <code>header</code> para redireccionar y que valide su correo.
+     * @param $usuario
+     * @return void
+     */
+    private function validarActivacion($usuario): void
+    {
+        if (!$usuario["verificado"]) {
+            $_SESSION["correoParaValidar"] = $usuario["email"];
+            $_SESSION["id_usuario"] = $usuario["id"];
+            $this->redireccionar("registro/validarCorreo");
+        }
     }
 
     /**
