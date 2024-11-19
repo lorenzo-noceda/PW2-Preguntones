@@ -12,18 +12,26 @@
     <link href="/PW2-Preguntones/public/css/validacionCorreo.css" rel="stylesheet">
     <title>Validación Correo</title></head>
 <body>
-<main class="col-11 col-sm-9 col-md-6 col-lg-4 col-xl-3 p-4">
-    <h3>{{mensaje}}</h3>
-    {{#correoParaValidar}}
-        <p>{{correoParaValidar}}</p>
-    {{/correoParaValidar}}
-    <form method="post"
-          enctype="multipart/form-data"
-          action="/PW2-Preguntones/registro/validarJugador">
-        <input type="hidden" value="{{id_usuario}}" name="id_usuario"/>
-        <button class="btn btn-primary mx-auto">Validar correo electrónico</button>
-    </form>
-
+<header class="col-12 bg-primary text-white styledHeader">
+    <nav class="col-10 col-md-5 col-xl-4 d-flex mx-auto align-items-center justify-content-center">
+        <h3 class="text-white text-decoration-none">
+            Preguntones
+        </h3>
+    </nav>
+</header>
+<main class="col-12 p-4 text-white d-flex justify-content-center align-items-center">
+    <div class="d-flex flex-column gap-3 align-items-center">
+        <h3 class="m-0">{{mensaje}}</h3>
+        {{#correoParaValidar}}
+            <p class="m-0 fw-semibold fs-5">{{correoParaValidar}}</p>
+        {{/correoParaValidar}}
+        <form method="post"
+              enctype="multipart/form-data"
+              action="/PW2-Preguntones/registro/validarJugador">
+            <input type="hidden" value="{{id_usuario}}" name="id_usuario"/>
+            <button class="btn btn-primary mx-auto">Validar correo electrónico</button>
+        </form>
+    </div>
 </main>
 </body>
 </html>

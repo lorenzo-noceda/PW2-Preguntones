@@ -32,7 +32,7 @@
     </nav>
 </header>
 <main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
-             d-flex flex-column gap-2 mx-auto p-4">
+             d-flex flex-column gap-2 mx-auto p-4 text-white">
     {{#pregunta}}
         <h1>Reportar pregunta</h1>
         <form method="post"
@@ -44,7 +44,7 @@
                 <input value="{{pregunta_str}}" class="form-control" type="text" readonly>
                 <input value="{{id}}" name="id" type="hidden">
             </div>
-            <div>
+            <div class="d-flex flex-column gap-2">
                 <label for="queja">Descripción</label>
                 <textarea placeholder="Inserte su queja"
                           name="queja"

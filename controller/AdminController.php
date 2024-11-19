@@ -67,6 +67,7 @@ class AdminController
         } else echo "error devuelta";
     }
 
+    // Ver todas las "sugeridas" (pendientes)
     public function sugeridas()
     {
         $usuarioActual = $this->validarUsuario();
@@ -74,21 +75,55 @@ class AdminController
         $this->presenter->show("adminSugeridas", $data);
     }
 
+    // Ver una sugeria en específico
     public function verSugerida()
     {
         $idSugerida = $_GET["id"];
         $sugeridaCompleta = [
-            "pregunta" => $this->juegoModel->getPreguntaPorId($idSugerida),
-            "respuestas" => $this->juegoModel->getRespuestasDePregunta($idSugerida)
+            "pregunta" => $this->juegoModel->obtenerPreguntaPorId($idSugerida),
+            "respuestas" => $this->juegoModel->obtenerRespuestasDePregunta($idSugerida)
         ];
         $data["pregunta"] = $sugeridaCompleta["pregunta"];
         $data["respuestas"] = $sugeridaCompleta["respuestas"];
         $this->presenter->show("adminVerSugerida", $data);
     }
 
+    // Accions de preguntas sugeridas (activar, desactivar, rechazar)
     public function aprobar()
     {
+        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            $idPregunta = $_GET["id"];
+            $result = $this->juegoModel->aprobarPregunta($idPregunta);
+            if ($result) {
+                $data["mensaje"] = "¡Pregunta aprobada correctamente!";
+                $data["url"] = "admin";
+                $data["boton"] = "Volver a administración";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
+            } else {
+                $data["error"] = "¡Ups! No se pudo aprobar la pregunta.";
+                $this->presenter->show("error", $data);
+            }
+        } else {
+            $this->redireccionar("home");
+        }
+    }
 
+    public function rechazar() {
+        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            $idPregunta = $_GET['id'];
+            $result = $this->juegoModel->rechazarPregunta($idPregunta);
+            if ($result) {
+                $data["mensaje"] = "Pregunta rechazada correctamente.";
+                $data["boton"] = "Volver a administración";
+                $data["url"] = "admin";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
+            } else {
+                $data["error"] = "¡Ups! No se pudo rechazar la pregunta.";
+                $this->presenter->show("error", $data);
+            };
+        } else {
+            $this->redireccionar("home");
+        }
     }
 
     public function desactivar()
@@ -99,11 +134,15 @@ class AdminController
             if ($result) {
                 $data["mensaje"] = "Pregunta desactivada correctamente.";
                 $data["boton"] = "Volver a administración";
-                $data["url"] = "admin/reportadas";
+                $data["url"] = "admin";
                 $this->presenter->show("mensajeProcesoCorrecto", $data);
-            } else echo "error";
+            } else {
+                $data["error"] = "¡Ups! No se pudo desactivar la pregunta.";
+                $this->presenter->show("error", $data);
+            };
+        } else {
+            $this->redireccionar("home");
         }
-
     }
 
     public function editar()

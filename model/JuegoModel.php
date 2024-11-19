@@ -14,22 +14,58 @@ class JuegoModel
 
     public function empezar($idUsuario, $idPregunta = false): array{
         if($idPregunta){
-            $data["pregunta"] = $this->getPreguntaPorId($idPregunta);
+            $data["pregunta"] = $this->obtenerPreguntaPorId($idPregunta);
         } else {
             $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
             $data["id_pregunta"] = $data["pregunta"]["id"];
             $data["id_partida"] = $this->insertPartida($idUsuario);
         }
 
-        $data["respuestas"] = $this->getRespuestasDePregunta($data["pregunta"]["id"]);
+        $data["respuestas"] = $this->obtenerRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
         return $data;
     }
 
+    public function aprobarPregunta($idPregunta) {
+        if ($idPregunta == null) return false;
+        return $this->updatePreguntaAprobada($idPregunta);
+    }
+
+    public function desactivarPregunta($idPregunta) {
+        if ($idPregunta == null) return false;
+        return $this->updatePreguntaDesactivar($idPregunta);
+    }
+
+    public function rechazarPregunta ($idPregunta) {
+        if ($idPregunta == null) return false;
+        return $this->updatePreguntaRechazar($idPregunta);
+    }
+
+    public function crearSugerencia($texto, $idCategoria, $respuestas)
+    {
+        $result = $this->insertarPregunta($texto, $idCategoria);
+        if ($result) {
+            $ultimoId = $this->database->getUltimoIdGenerado();
+            $convertidas = $this->convertirRespuestas($respuestas, $ultimoId);
+            foreach ($convertidas as $respuesta) {
+                $salioBien = $this->insertRespuestaDePregunta(
+                    $respuesta["texto"],
+                    $respuesta["id_pregunta"],
+                    $respuesta["esCorrecta"]
+                );
+                if (!$salioBien) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
 
     public function reportar($idUsuario, $idPregunta, $stringTexto)
     {
-        $preguntaBuscada = $this->getPreguntaPorId($idPregunta);
+        $preguntaBuscada = $this->obtenerPreguntaPorId($idPregunta);
         $resultado = null;
         if (!empty($preguntaBuscada)) {
             $resultado = $this->insertReporte((int)$idUsuario, $idPregunta, $stringTexto);
@@ -68,17 +104,7 @@ class JuegoModel
         return $result;
     }
 
-    private function resetearPreguntasRespondidasPorUsuario($idUsuario)
-    {
-        $q = "DELETE FROM usuario_pregunta
-              WHERE usuario_id = :id";
 
-        $params = [
-            ["columna" => "id", "valor" => $idUsuario]
-        ];
-
-        return $this->database->query($q, 'DELETE', $params);
-    }
 
     /** Calcula cuantas respondió el usuario de todas las preguntas.
      * @param $idUsuario
@@ -110,34 +136,6 @@ class JuegoModel
             }
         }
         return false;
-    }
-
-    // NUEVO PARA ACTUALIZAR PREGUNTA
-
-    private function updatePregunta(string $texto, int $idCategoria, int $idPregunta)
-    {
-        $q = "UPDATE pregunta 
-              SET texto = :texto,
-                  id_categoria = :categoria,
-                  id_estado = 2
-             WHERE id = :id";
-        $params = [
-            ["columna" => "texto", "valor" => $texto],
-            ["columna" => "categoria", "valor" => $idCategoria],
-            ["columna" => "id", "valor" => $idPregunta],
-        ];
-        $result = $this->database->query($q, "UPDATE", $params);
-        return $result["success"];
-    }
-
-    private function eliminarRespuestasDePregunta($idPregunta)
-    {
-        $q = "DELETE FROM respuesta WHERE id_pregunta = :id";
-        $params = [
-            ["columna" => "id", "valor" => $idPregunta],
-        ];
-        $result = $this->database->query($q, "DELETE", $params);
-        return $result["success"];
     }
 
     private function actualizarRespuestasDePregunta(
@@ -183,9 +181,6 @@ class JuegoModel
         }
         return $contadorInsertsCorrectos;
     }
-
-
-    // FIN DE LO NUEVO
 
     // Métodos para desarrollo
 
@@ -444,7 +439,11 @@ class JuegoModel
     }
 
 
-    public function getPreguntaPorId($id)
+    /** Obtener pregunta de la base de datos por id.
+     * @param $id
+     * @return mixed
+     */
+    public function obtenerPreguntaPorId($id)
     {
         $q = "SELECT 
               p.texto as pregunta_str, 
@@ -462,7 +461,7 @@ class JuegoModel
         return $result;
     }
 
-    public function getRespuestasDePregunta($id)
+    public function obtenerRespuestasDePregunta($id)
     {
         $q = "SELECT 
                     texto as respuesta_str, 
@@ -565,18 +564,6 @@ class JuegoModel
             ["columna" => "idPregunta", "valor" => $idPregunta]
         ];
         $result = $this->database->query($q, 'UPDATE', $params);
-        return $result["success"];
-    }
-
-    public function desactivarPregunta($idPregunta)
-    {
-        $q = "UPDATE pregunta
-              SET id_estado = 5
-              WHERE id = :id";
-        $params = [
-            ["columna" => "id", "valor" => $idPregunta, "tipo" => "int"],
-        ];
-        $result = $this->database->query($q, "UPDATE", $params);
         return $result["success"];
     }
 
@@ -827,25 +814,102 @@ class JuegoModel
         return $result["success"];
     }
 
-    public function crearSugerencia($texto, $idCategoria, $respuestas)
-    {
-        $result = $this->insertarPregunta($texto, $idCategoria);
-        if ($result) {
-            $ultimoId = $this->database->getUltimoIdGenerado();
-            $convertidas = $this->convertirRespuestas($respuestas, $ultimoId);
-            foreach ($convertidas as $respuesta) {
-                $salioBien = $this->insertRespuestaDePregunta(
-                    $respuesta["texto"],
-                    $respuesta["id_pregunta"],
-                    $respuesta["esCorrecta"]
-                );
-                if (!$salioBien) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    /** Cambiar estado de pregunta a APROBADA
+     * @param $idPregunta
+     * @return mixed
+     */
+    private function updatePreguntaAprobada($idPregunta) {
+        $q = "UPDATE pregunta
+              SET id_estado = 2 
+              WHERE id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => $idPregunta]
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
     }
+
+    /** Resetea todas las preguntas que respondió
+     * @param $idUsuario
+     * @return void
+     */
+    private function resetearPreguntasRespondidasPorUsuario($idUsuario): void
+    {
+        $q = "DELETE FROM usuario_pregunta
+              WHERE usuario_id = :id";
+
+        $params = [
+            ["columna" => "id", "valor" => $idUsuario]
+        ];
+
+        $this->database->query($q, 'DELETE', $params);
+    }
+
+    /** Actualizar pregunta (texto, categoria, FALTA ESTADO)
+     * @param string $texto
+     * @param int $idCategoria
+     * @param int $idPregunta
+     * @return mixed
+     */
+    private function updatePregunta(string $texto, int $idCategoria, int $idPregunta): mixed
+    {
+        $q = "UPDATE pregunta 
+              SET texto = :texto,
+                  id_categoria = :categoria,
+                  id_estado = 2
+             WHERE id = :id";
+        $params = [
+            ["columna" => "texto", "valor" => $texto],
+            ["columna" => "categoria", "valor" => $idCategoria],
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
+    }
+
+    /** Elimina las respuestas asociadas a una pregunta
+     * @param $idPregunta
+     * @return mixed
+     */
+    private function eliminarRespuestasDePregunta($idPregunta)
+    {
+        $q = "DELETE FROM respuesta WHERE id_pregunta = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "DELETE", $params);
+        return $result["success"];
+    }
+
+    /** Cambiar estado de pregunta a DESACTIVADA
+     * @param $idPregunta
+     * @return mixed
+     */
+    private function updatePreguntaDesactivar($idPregunta)
+    {
+        $q = "UPDATE pregunta
+              SET id_estado = 5
+              WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
+    }
+
+    private function updatePreguntaRechazar($idPregunta)
+    {
+        $q = "UPDATE pregunta
+              SET id_estado = 3
+              WHERE id = :id";
+        $params = [
+            ["columna" => "id", "valor" => $idPregunta],
+        ];
+        $result = $this->database->query($q, "UPDATE", $params);
+        return $result["success"];
+    }
+
+
 
     private function convertirRespuestas($respuestas, $idPregunta): array
     {

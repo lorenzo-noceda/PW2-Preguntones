@@ -14,23 +14,11 @@ class JuegoController
         $this->presenter = $presenter;
     }
 
-    /*
-     con 1 metodo de tipo acción empezamos el juego
-     mientras valla todo bien lo dejamos en el metodo partida
-     cuando termina ejecutamos metetodo de acción
-
-
-     empezar () -> prepara partida
-     partida () -> renderiza a medida que va avanzando y guarda
-     finalizar () -> corta ejecución por -> abandono, pierde
-     */
-
-
     public function empezar()
     {
         // Validar usuario en sesión y validación de correo.
         $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
+
         // Validar contador correctas y puntaje.
         $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] ?? 0;
         $_SESSION["puntaje"] = $_SESSION["puntaje"] ?? 0;
@@ -38,6 +26,7 @@ class JuegoController
         if(!isset($_SESSION["id_pregunta"])){
             $_SESSION["tiempo_inicio"] = time();
         }
+
         $data = $this->model->empezar($usuarioActual["id"], $_SESSION["id_pregunta"] ?? null);
 
         $_SESSION["id_pregunta"] = $data["id_pregunta"] ?? $_SESSION["id_pregunta"];
@@ -70,17 +59,16 @@ class JuegoController
 
     public function reportar()
     {
-        $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
+        $this->validarUsuario();
         $idPreguntaReporte = $_GET["id"];
-        $data["pregunta"] = $this->model->getPreguntaPorId($idPreguntaReporte);
+        $data["pregunta"] = $this->model->obtenerPreguntaPorId($idPreguntaReporte);
         $this->presenter->show("reportePregunta", $data);
     }
 
     public function enviarReporte()
     {
         $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $idPregunta = $_POST['id'];
             $stringQueja = $_POST['queja'];
@@ -88,9 +76,11 @@ class JuegoController
                 $usuarioActual["id"],
                 $idPregunta,
                 $stringQueja);
-
             if ($result) {
-                echo "reportada cheto pa";
+                $data["mensaje"] = "¡Reporte enviado correctamente!";
+                $data["boton"] = "Ir al inicio";
+                $data["url"] = "home";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
             } else {
                 echo "no reportada";
             }
@@ -114,9 +104,11 @@ class JuegoController
         $respuestaElegidaId = $parametros["respuesta_id"];
         $idUsuario = $_SESSION["usuario"]["id"];
         $idPartida = $_SESSION["id_partida"];
-        $pregunta = $this->model->getPreguntaPorId($preguntaId);
+
+        $pregunta = $this->model->obtenerPreguntaPorId($preguntaId);
 
         $tiempoLimite = $_SESSION["tiempo_inicio"] + 10;
+
         if(time() > $tiempoLimite){
             $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);
             unset($_SESSION["id_partida"]);
@@ -124,14 +116,17 @@ class JuegoController
             return;
         }
 
-        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
+        $respuestas = $this->model->obtenerRespuestasDePregunta($pregunta["id"]);
         $respuesta = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
+
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] ?? null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] ?? null;
 
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] != null ? $respuesta["respuestaCorrecta_str"] : null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] != null ? $respuesta["respuestaIncorrecta_str"] : null;
+
         $error = $this->model->actualizarRespondidas($idUsuario, $preguntaId);
+
         if($error){
             $this->empezar();
         }
@@ -166,12 +161,13 @@ class JuegoController
 
     }
 
-    private
-    function finalizarJuego(): void
+    // Termina juego en caso de responder mal o quedar fuera de tiempo
+    private function finalizarJuego(): void
     {
         $data = [
             "puntaje" => $_SESSION["puntaje"],
             "pregunta" => $_SESSION["pregunta"]["pregunta_str"],
+            "id" => $_SESSION["pregunta"]["id"],
             "respuestaCorrecta" => htmlspecialchars($_SESSION["correcta_str"]),
             "respuestaElegida" => htmlspecialchars($_SESSION["incorrecta_str"])
         ];
@@ -264,6 +260,11 @@ class JuegoController
         $usuarioActual = $_SESSION["usuario"] ?? null;
         if ($usuarioActual == null) {
             $this->redireccionar("login");
+        }
+        if (!$usuarioActual["verificado"]) {
+            $_SESSION["correoParaValidar"] = $usuarioActual["email"];
+            $_SESSION["id_usuario"] = $usuarioActual["id"];
+            $this->redireccionar("registro/validarCorreo");
         }
         return $usuarioActual;
     }
