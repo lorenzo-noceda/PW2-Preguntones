@@ -29,11 +29,6 @@ class Database
             $this->stmt = $this->conexion->prepare($query); // Prepara la consulta
 
             // Vincula los parámetros a la consulta
-            // foreach ($params as $columna => $valor) {
-            //    $this->stmt->bindValue(":{$columna}", $valor);
-            //} no funciono, att gonza
-
-            // Vincula los parámetros a la consulta
             foreach ($params as $p) {
                 $this->stmt->bindValue(":{$p["columna"]}", $p["valor"]);
             }

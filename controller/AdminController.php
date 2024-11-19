@@ -15,7 +15,6 @@ class AdminController
     public function list(): void
     {
         $usuarioActual = $this->validarUsuario();
-        $this->validarActivacion($usuarioActual);
 
         $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
         if (empty($cantidadDePartidas)) {
@@ -70,8 +69,21 @@ class AdminController
 
     public function sugeridas()
     {
+        $usuarioActual = $this->validarUsuario();
         $data["sugeridas"] = $this->juegoModel->getSugeridas();
         $this->presenter->show("adminSugeridas", $data);
+    }
+
+    public function verSugerida()
+    {
+        $idSugerida = $_GET["id"];
+        $sugeridaCompleta = [
+            "pregunta" => $this->juegoModel->getPreguntaPorId($idSugerida),
+            "respuestas" => $this->juegoModel->getRespuestasDePregunta($idSugerida)
+        ];
+        $data["pregunta"] = $sugeridaCompleta["pregunta"];
+        $data["respuestas"] = $sugeridaCompleta["respuestas"];
+        $this->presenter->show("adminVerSugerida", $data);
     }
 
     public function aprobar()
@@ -180,6 +192,7 @@ class AdminController
         if ($usuarioActual == null) {
             $this->redireccionar("login");
         }
+        $this->validarActivacion($usuarioActual);
         return $usuarioActual;
     }
 
