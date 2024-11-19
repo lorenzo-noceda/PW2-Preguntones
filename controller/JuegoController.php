@@ -47,7 +47,9 @@ class JuegoController
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],
-             "id_usuario" => $usuarioActual["id"]];
+             "id_usuario" => $usuarioActual["id"],
+             "tiempo_limite" => 10,
+             "tiempo_inicio" => time()];
         $this->presenter->show("juego", $data);
     }
 
@@ -57,11 +59,9 @@ class JuegoController
     // Guarda como fue respondida la pregunta // in progress...
     // TODO: sacar if's del controlador y mandarlos al modelo
 
-    public function validarRespuesta()
-    {
+    public function validarRespuesta(){
         unset($_SESSION["id_pregunta"]);
 
-        $tiempoLimite = $_SESSION["tiempo_inicio"] + 10;
         // Valido ingreso por $_POST
         $parametros = $this->validarPreguntaRespuestaRecibidas();
 
@@ -72,10 +72,9 @@ class JuegoController
         $idPartida = $_SESSION["id_partida"];
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
 
+        $tiempoLimite = $_SESSION["tiempo_inicio"] + 10;
         if(time() > $tiempoLimite){
-            $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], $idPartida, 0
-            );
+            $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);
             unset($_SESSION["id_partida"]);
             $this->tiempoPreguntaCumplido();
             return;
@@ -92,9 +91,7 @@ class JuegoController
         }
 
         if($respuesta["respondioBien"] === false){
-            $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], $idPartida, 0
-            );
+            $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);
             unset($_SESSION["id_partida"]);
             $this->finalizarJuego();
             return;

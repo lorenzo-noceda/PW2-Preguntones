@@ -52,11 +52,14 @@
             {{#pregunta}}
                 <input type="hidden" value="{{id}}" name="pregunta_id">
             {{/pregunta}}
+            <input type="hidden" id="tiempo_inicio" value="{{tiempo_inicio}}">
+            <input type="hidden" id="tiempo_limite" value="{{tiempo_limite}}">
             {{#respuestas}}
                 <button type="submit" class="btn btn-primary col-12"
                         name="respuesta_id"
                         value="{{respuesta_id}}">{{respuesta_str}}</button>
             {{/respuestas}}
+            <p id="reloj">{{tiempo_limite}}</p>
         </form>
     </div>
 
@@ -64,5 +67,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+<script src="/PW2-Preguntones/public/js/juego.js"></script>
 </body>
 </html>
