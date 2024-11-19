@@ -12,11 +12,9 @@ class JuegoModel
     }
 
 
-
-    public function empezar($idUsuario, $hayPregunta = false): array
-    {
-        if ($hayPregunta) {
-            $data["pregunta"] = $this->getPreguntaPorId($hayPregunta);
+    public function empezar($idUsuario, $idPregunta = false): array{
+        if($idPregunta){
+            $data["pregunta"] = $this->getPreguntaPorId($idPregunta);
         } else {
             $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
             $data["id_pregunta"] = $data["pregunta"]["id"];

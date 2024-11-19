@@ -35,6 +35,9 @@ class JuegoController
         $_SESSION["contadorCorrectas"] = $_SESSION["contadorCorrectas"] ?? 0;
         $_SESSION["puntaje"] = $_SESSION["puntaje"] ?? 0;
 
+        if(!isset($_SESSION["id_pregunta"])){
+            $_SESSION["tiempo_inicio"] = time();
+        }
         $data = $this->model->empezar($usuarioActual["id"], $_SESSION["id_pregunta"] ?? null);
 
         $_SESSION["id_pregunta"] = $data["id_pregunta"] ?? $_SESSION["id_pregunta"];
@@ -44,7 +47,9 @@ class JuegoController
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],
-             "id_usuario" => $usuarioActual["id"]];
+             "id_usuario" => $usuarioActual["id"],
+             "tiempo_limite" => 10,
+             "tiempo_inicio" => time()];
         $this->presenter->show("juego", $data);
     }
 
@@ -99,13 +104,7 @@ class JuegoController
     // Guarda como fue respondida la pregunta // in progress...
     // TODO: sacar if's del controlador y mandarlos al modelo
 
-    public function validarRespuesta()
-    {
-
-
-        // PROBAR QUE ANDE TODO BIEN
-
-
+    public function validarRespuesta(){
         unset($_SESSION["id_pregunta"]);
         // Valido ingreso por $_POST
         $parametros = $this->validarPreguntaRespuestaRecibidas();
@@ -115,10 +114,17 @@ class JuegoController
         $respuestaElegidaId = $parametros["respuesta_id"];
         $idUsuario = $_SESSION["usuario"]["id"];
         $idPartida = $_SESSION["id_partida"];
-
         $pregunta = $this->model->getPreguntaPorId($preguntaId);
-        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
 
+        $tiempoLimite = $_SESSION["tiempo_inicio"] + 10;
+        if(time() > $tiempoLimite){
+            $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);
+            unset($_SESSION["id_partida"]);
+            $this->tiempoPreguntaCumplido();
+            return;
+        }
+
+        $respuestas = $this->model->getRespuestasDePregunta($pregunta["id"]);
         $respuesta = $this->validarRespuestaUsuario($respuestas, $respuestaElegidaId);
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] ?? null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] ?? null;
@@ -131,9 +137,7 @@ class JuegoController
         }
 
         if($respuesta["respondioBien"] === false){
-            $this->model->guardarRespuesta(
-                $idUsuario, $pregunta["id"], $idPartida, 0
-            );
+            $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);
             unset($_SESSION["id_partida"]);
             $this->finalizarJuego();
             return;
@@ -177,6 +181,19 @@ class JuegoController
         unset($_SESSION["puntaje"]);
 
         $this->presenter->show("resultadoPartida", $data);
+    }
+
+    private function tiempoPreguntaCumplido(): void {
+        $data = [
+            "puntaje" => $_SESSION["puntaje"],
+            "pregunta" => $_SESSION["pregunta"]["pregunta_str"]
+        ];
+
+        unset($_SESSION["pregunta"]);
+        unset($_SESSION["contadorCorrectas"]);
+        unset($_SESSION["puntaje"]);
+
+        $this->presenter->show("tiempoPreguntaCumplido", $data);
     }
 
     // Métodos solo para desarrollo
