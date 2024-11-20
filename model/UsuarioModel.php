@@ -257,7 +257,10 @@ class UsuarioModel
                    u.fecha_registro,
                    u.latitud,          
                    u.longitud, 
-                   s.id AS sexoId, s.nombre AS sexoNombre 
+                   s.id AS sexoId, s.nombre AS sexoNombre ,
+                   u.verificado,
+                   u.cantidad_respondidas,
+                   u.cantidad_acertadas
             FROM usuario u
             JOIN sexo s ON u.id_sexo = s.id
             WHERE u.id = :id";
@@ -400,10 +403,9 @@ SELECT u.*,
 
     private function actualizarEstadoVerificado($idUsuario)
     {
-        $query = "
-        UPDATE usuario
-        SET verificado = :verificado
-        WHERE id = :id";
+        $query = "UPDATE usuario
+                  SET verificado = :verificado
+                  WHERE id = :id";
 
         $params = [
             ["columna" => "verificado", "valor" => 1],
@@ -411,6 +413,17 @@ SELECT u.*,
         ];
 
         return $this->database->query($query, 'UPDATE', $params);
+    }
+
+    public function obtenerUsuariosPorSexo () {
+        $q = "SELECT COUNT(s.nombre) as cantidad, s.nombre
+              FROM USUARIO u JOIN sexo s ON u.id_sexo = s.id
+              GROUP BY s.nombre";
+        $result = $this->database->query($q, "MULTIPLE");
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
     }
 
 

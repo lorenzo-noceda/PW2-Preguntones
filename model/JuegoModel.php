@@ -12,8 +12,9 @@ class JuegoModel
     }
 
 
-    public function empezar($idUsuario, $idPregunta = false): array{
-        if($idPregunta){
+    public function empezar($idUsuario, $idPregunta = false): array
+    {
+        if ($idPregunta) {
             $data["pregunta"] = $this->obtenerPreguntaPorId($idPregunta);
         } else {
             $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
@@ -26,19 +27,40 @@ class JuegoModel
         return $data;
     }
 
-    public function aprobarPregunta($idPregunta) {
+    public function aprobarPregunta($idPregunta)
+    {
         if ($idPregunta == null) return false;
         return $this->updatePreguntaAprobada($idPregunta);
     }
 
-    public function desactivarPregunta($idPregunta) {
+    public function desactivarPregunta($idPregunta)
+    {
         if ($idPregunta == null) return false;
         return $this->updatePreguntaDesactivar($idPregunta);
     }
 
-    public function rechazarPregunta ($idPregunta) {
+    public function rechazarPregunta($idPregunta)
+    {
         if ($idPregunta == null) return false;
         return $this->updatePreguntaRechazar($idPregunta);
+    }
+
+    private function hayMasPreguntasParaUsuarioPorNivel($idUsuario)
+    {
+        $result = $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
+        if (count($result["data"]) > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private function hayMasPreguntasParaUsuario($idUsuario)
+    {
+        $result = $this->buscarPreguntasParaUsuario($idUsuario);
+        if (count($result["data"]) > 0) {
+            return true;
+        }
+        return false;
     }
 
     public function crearSugerencia($texto, $idCategoria, $respuestas)
@@ -62,7 +84,6 @@ class JuegoModel
     }
 
 
-
     public function reportar($idUsuario, $idPregunta, $stringTexto)
     {
         $preguntaBuscada = $this->obtenerPreguntaPorId($idPregunta);
@@ -79,13 +100,29 @@ class JuegoModel
         return false;
     }
 
-
     private function getPreguntaRandom($idUsuario)
     {
-        // Functiona OK
         $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
         $indicePreguntaRandom = array_rand($preguntasDB);
         return $preguntasDB[$indicePreguntaRandom];
+    }
+
+    private function obtenerNivelDePregunta($idPregunta)
+    {
+        $respondidas = $this->obtenerCantidadRespondidasPorPregunta($idPregunta);
+        if ($respondidas < 10) {
+            return self::NIVEL_MEDIO;
+        }
+        $acertadas = $this->obtenerCantidadAcertadasPorPregunta($idPregunta);
+        $nivelPregunta = $acertadas / $respondidas;
+        switch ($nivelPregunta) {
+            case $nivelPregunta < 0.33:
+                return self::NIVEL_BAJO;
+            case $nivelPregunta < 0.66:
+                return self::NIVEL_MEDIO;
+            default:
+                return self::NIVEL_ALTO;
+        }
     }
 
     public function guardarRespuesta($idUsuario, $idPregunta, $idPartida, $state)
@@ -104,7 +141,10 @@ class JuegoModel
         return $result;
     }
 
-
+    public function obtenerNumeroDeJugadores()
+    {
+        return $this->obtenerCantidadDeJugadores()["jugadores"];
+    }
 
     /** Calcula cuantas respondió el usuario de todas las preguntas.
      * @param $idUsuario
@@ -629,11 +669,16 @@ class JuegoModel
         return $this->database->query($q, 'UPDATE', $params);
     }
 
-    // helpers de clase
-    private function verVariable($data): void
+    private function obtenerCantidadDeJugadores()
     {
-        echo '<pre>' . print_r($data, true) . '</pre>';
+        $q = "SELECT COUNT(*) AS jugadores FROM jugador";
+        $result = $this->database->query($q, "SINGLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
     }
+
 
     private function obtenerNivelDeUsuario($idUsuario)
     {
@@ -647,24 +692,6 @@ class JuegoModel
             case $nivelUsuario < 0.3:
                 return self::NIVEL_BAJO;
             case $nivelUsuario < 0.71:
-                return self::NIVEL_MEDIO;
-            default:
-                return self::NIVEL_ALTO;
-        }
-    }
-
-    private function obtenerNivelDePregunta($idPregunta)
-    {
-        $respondidas = $this->obtenerCantidadRespondidasPorPregunta($idPregunta);
-        if ($respondidas < 10) {
-            return self::NIVEL_MEDIO;
-        }
-        $acertadas = $this->obtenerCantidadAcertadasPorPregunta($idPregunta);
-        $nivelPregunta = $acertadas / $respondidas;
-        switch ($nivelPregunta) {
-            case $nivelPregunta < 0.33:
-                return self::NIVEL_BAJO;
-            case $nivelPregunta < 0.66:
                 return self::NIVEL_MEDIO;
             default:
                 return self::NIVEL_ALTO;
@@ -750,24 +777,6 @@ class JuegoModel
         return $this->database->query($q, 'MULTIPLE', $params);
     }
 
-    private function hayMasPreguntasParaUsuarioPorNivel($idUsuario)
-    {
-        $result = $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
-        if (count($result["data"]) > 0) {
-            return true;
-        }
-        return false;
-    }
-
-    private function hayMasPreguntasParaUsuario($idUsuario)
-    {
-        $result = $this->buscarPreguntasParaUsuario($idUsuario);
-        if (count($result["data"]) > 0) {
-            return true;
-        }
-        return false;
-    }
-
     private function buscarPreguntasParaUsuario($idUsuario)
     {
         $q = "SELECT p.id as id, p.texto as pregunta_str
@@ -818,7 +827,8 @@ class JuegoModel
      * @param $idPregunta
      * @return mixed
      */
-    private function updatePreguntaAprobada($idPregunta) {
+    private function updatePreguntaAprobada($idPregunta)
+    {
         $q = "UPDATE pregunta
               SET id_estado = 2 
               WHERE id = :idPregunta";
@@ -909,8 +919,6 @@ class JuegoModel
         return $result["success"];
     }
 
-
-
     private function convertirRespuestas($respuestas, $idPregunta): array
     {
         $result = [];
@@ -919,6 +927,11 @@ class JuegoModel
             $result[] = $r;
         }
         return $result;
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre>' . print_r($data, true) . '</pre>';
     }
 
 }
