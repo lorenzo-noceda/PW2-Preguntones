@@ -34,51 +34,56 @@
 <main class="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4
             d-flex flex-column justify-content-between mx-auto p-4">
     <div class="col-12 d-flex flex-column gap-2">
-        <h3 class="text-center m-0 pt-2 fs-4">¡Ups! Respuesta incorrecta</h3>
+        <h3 class="text-center m-0 fs-4 text-white">¡Ups! Respuesta incorrecta</h3>
         <div class="text-center py-5 px-3 fs-4 fw-semibold bg-danger-subtle rounded-4 mt-2
                     d-flex flex-column gap-2">
-        {{#pregunta}}
-            <p class="m-0 p-0 ">{{pregunta}}</p>
-        {{/pregunta}}
-    </div>
-    <div class="col-12 d-flex flex-column gap-2 bg-dark-subtle rounded-4 p-2">
-        <p class="p-0 m-0 text-center fw-semibold">Obtuviste {{puntaje}} puntos!</p>
             {{#pregunta}}
                 <p class="m-0 p-0 ">{{pregunta}}</p>
             {{/pregunta}}
         </div>
-        <!--  LA QUE ES CORRECTA  -->
-        <div class="d-flex align-items-center justify-content-center
+        <div class="mx-auto">
+            {{#pregunta}}
+                <a href="/PW2-Preguntones/juego/reportar?id={{id}}"
+                class="btn btn-danger">
+                Reportar pregunta
+                </a>
+            {{/pregunta}}
+        </div>
+        <div class="col-12 d-flex flex-column gap-2 rounded-4 p-2">
+            <!--  LA QUE ES CORRECTA  -->
+            <div class="d-flex align-items-center justify-content-center
                     text-white bg-success rounded-4 position-relative p-2">
-            <p class="m-0 p-0 text-center fs-6 fw-semibold">{{respuestaCorrecta}}</p>
-            <div class="checkImage">
-                <img src="/PW2-Preguntones/public/images/check.svg"
-                     alt="Respuesta correcta icono">
+                <p class="m-0 p-0 text-center fs-6 fw-semibold">{{respuestaCorrecta}}</p>
+                <div class="checkImage">
+                    <img src="/PW2-Preguntones/public/images/check.svg"
+                         alt="Respuesta correcta icono">
+                </div>
             </div>
-        </div>
-        <!--  LA QUE ES INCORRECTA  -->
-        <div class="d-flex align-items-center justify-content-center
+            <!--  LA QUE ES INCORRECTA  -->
+            <div class="d-flex align-items-center justify-content-center
                     text-white bg-danger rounded-4 position-relative p-2">
-            <p class="m-0 p-0 text-center fs-6 fw-semibold">{{respuestaElegida}}</p>
-            <div class="checkImage">
-                <img src="/PW2-Preguntones/public/images/cross.svg"
-                     alt="Respuesta incorrecta icono">
+                <p class="m-0 p-0 text-center fs-6 fw-semibold">{{respuestaElegida}}</p>
+                <div class="checkImage">
+                    <img src="/PW2-Preguntones/public/images/cross.svg"
+                         alt="Respuesta incorrecta icono">
+                </div>
             </div>
-        </div>
 
-        <!--  PUNTAJE ACUMULADO  -->
-        <div class="col-12 d-flex align-items-center justify-content-center
+            <!--  PUNTAJE ACUMULADO  -->
+            <div class="col-12 d-flex align-items-center justify-content-center
                     text-white bg-info-subtle rounded-4 p-2">
-            <p class="m-0 p-0 text-center fs-6 fw-semibold text-black">
-                Puntaje obtenido: {{puntaje}} puntos.
-            </p>
+                <p class="m-0 p-0 text-center fs-6 fw-semibold text-black">
+                    Puntaje obtenido: {{puntaje}} puntos.
+                </p>
+            </div>
         </div>
     </div>
+    <!--   OPCIONES DE AVANCE     -->
     <div class="d-flex gap-2 col-12 pb-2 d-flex flex-column gap-2">
         <a href="/PW2-Preguntones/juego/empezar" class="mx-auto btn btn-success col-12">
             Jugar otra
         </a>
-        <a href="/PW2-Preguntones/home" class="mx-auto btn btn-warning col-12">
+        <a href="/PW2-Preguntones/home" class="mx-auto btn btn-danger col-12">
             Salir
         </a>
     </div>
