@@ -53,6 +53,21 @@ class PerfilController
         }
     }
 
+    public function musica()
+    {
+        $this->validarUsuario();
+        $id = $_GET["id"] ?? null;
+        if(isset($_POST["musica"])){
+            $activarMusica= $_POST["musica"]==="true" ? 1 : 0;
+            $this->usuarioModel->actualizarMusica($id, $activarMusica);
+            $_SESSION["musica"]=$activarMusica;
+        }
+
+
+        $this->redireccionar("perfil?id=".$id);
+
+    }
+
     // Helpers de clase
 
     /**

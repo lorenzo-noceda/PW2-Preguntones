@@ -57,6 +57,7 @@ class LoginController
                 // Guardamos el usuario en sesion
                 $_SESSION['usuario'] = $usuario;
                 $_SESSION['rol'] = $rol;
+                $_SESSION['musica'] = $usuario['musica'];
 
                 // A casita perro
                 $this->redireccionar("home");

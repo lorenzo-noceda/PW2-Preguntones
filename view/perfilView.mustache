@@ -28,7 +28,7 @@
                 <h3>Preguntones</h3>
             </a>
             <div class="col-3 d-flex justify-content-end">
-                <a href="/PW2-Preguntones/perfil?id={{id_usuario}}" class="userImageContainer">
+                <a href="/PW2-Preguntones/perfil?id={{usuario.id}}" class="userImageContainer">
                 <img src="/PW2-Preguntones/public/images/user.png"/>
                 </a>
             </div>
@@ -82,6 +82,19 @@
                             Puntaje:
                         </strong>
                         {{puntajeAcumulado}}</p>
+
+                    <p> musica en el juego</p>
+                        <form method="POST" class="botones" action="/PW2-Preguntones/perfil/musica?id={{usuario.id}}">
+                            <!--<label>activar<input  onchange="this.form.submit()" type="radio" value="true" name="musica" id="musicaSi" {{#usuario.musica}}checked{{/usuario.musica}}></label>
+                            <label>desactivar<input onchange="this.form.submit()" type="radio" value="false" name="musica" id="musicaNo"  {{^usuario.musica}}checked{{/usuario.musica}} ></label>-->
+                    <div class="radio-container">
+                        <input type="radio" name="musica" value="true" id="musicaSi" onchange="this.form.submit()" {{#usuario.musica}}checked{{/usuario.musica}}>
+                        <label for="musicaSi">Activada</label>
+
+                        <input type="radio" name="musica" value="false" id="musicaNo" onchange="this.form.submit()" {{^usuario.musica}}checked{{/usuario.musica}}>
+                        <label for="musicaNo">Desactivada</label>
+                    </div>
+                        </form>
                 </div>
             </div>
             <!--   QR-->
