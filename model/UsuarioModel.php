@@ -367,7 +367,8 @@ SELECT u.*,
         return $result["success"];
     }
 
-    public function esAdmin($idUsuario) {
+    public function esAdmin(int $idUsuario): bool
+    {
         $query = "SELECT COUNT(*) AS total FROM administrador WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
@@ -376,6 +377,7 @@ SELECT u.*,
 
         return $result['success'] && $result['data']['total'] > 0;
     }
+
 
     public function esEditor($idUsuario) {
         $query = "SELECT COUNT(*) AS total FROM editor WHERE id = :id";
