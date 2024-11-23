@@ -353,20 +353,47 @@ SELECT u.*,
         return $this->getUsuarioPorCorreo($correo) != null;
     }
 
-    public function guardarSugerencia($idUsuario, $pregunta, $respuestas): bool
+    public function subirRespuesta($respuesta){
+        $queryRespuesta="
+        INSERT INTO respuesta(texto,id_pregunta, esCorrecta)
+        values(:texto, :id_pregunta, :esCorrecta)";
+
+        $params = [
+            ["columna" => "texto", "valor" => $respuesta["texto"]],
+            ["columna" => "id_pregunta", "valor" => $respuesta["id_pregunta"]],
+            ["columna" => "esCorrecta", "valor" => $respuesta["esCorrecta"]]
+        ];
+        return $this->database->query($queryRespuesta, 'INSERT', $params);
+    }
+
+    public function guardarSugerencia($texto, $id_categoria,$respuestas): bool
     {
         $query = "
-        INSERT INTO pregunta_sugerida (usuario_id, pregunta, respuesta_correcta, respuesta_incorrecta_1, respuesta_incorrecta_2, respuesta_incorrecta_3)
-        VALUES (:usuario_id, :pregunta, :respuesta_correcta, :respuesta_incorrecta_1, :respuesta_incorrecta_2, :respuesta_incorrecta_3)";
+        INSERT INTO pregunta(texto, id_categoria, id_estado)
+        VALUES (:texto, :id_categoria, :id_estado)";
         $params = [
-            ["columna" => "usuario_id", "valor" => $idUsuario],
-            ["columna" => "pregunta", "valor" => $pregunta],
-            ["columna" => "respuesta_correcta", "valor" => $respuestas['correcta']],
-            ["columna" => "respuesta_incorrecta_1", "valor" => $respuestas['incorrecta1']],
-            ["columna" => "respuesta_incorrecta_2", "valor" => $respuestas['incorrecta2']],
-            ["columna" => "respuesta_incorrecta_3", "valor" => $respuestas['incorrecta3']],
+            ["columna" => "texto", "valor" => $texto],
+            ["columna" => "id_categoria", "valor" => $id_categoria],
+            ["columna" => "id_estado", "valor" => 1]
         ];
         $result = $this->database->query($query, 'INSERT', $params);
+
+        $ultimoId = $this->database->getUltimoIdGenerado();
+
+        $queryRespuesta="
+        INSERT INTO respuesta(respuestas,ultimoId, esCorrecta)
+        values(:respuestas, :ultimoId, :esCorrecta)";
+
+        $respuesta1=["texto"=>$respuestas["incorrecta1"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta2=["texto"=>$respuestas["incorrecta2"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta3=["texto"=>$respuestas["incorrecta3"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta4=["texto"=>$respuestas["correcta"], "id_pregunta"=>$ultimoId, "esCorrecta"=>1];
+
+        $this->subirRespuesta($respuesta1);
+        $this->subirRespuesta($respuesta2);
+        $this->subirRespuesta($respuesta3);
+        $this->subirRespuesta($respuesta4);
+
         return $result["success"];
     }
 
