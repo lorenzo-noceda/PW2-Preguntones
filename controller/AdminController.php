@@ -7,7 +7,7 @@ class AdminController
     private UsuarioModel $usuarioModel;
     private MustachePresenter $presenter;
     private GraficosModel $graficosModel;
-
+    
     public function __construct($juegoModel, $usuarioModel, $presenter, $graficosModel)
     {
         $this->juegoModel = $juegoModel;
@@ -19,17 +19,19 @@ class AdminController
 
     public function list(): void
     {
-        $usuarioActual = $this->validarUsuario();
+        $this->validarAdministrador(); // Asegura que el usuario es administrador.
 
+        $usuarioActual = $this->validarUsuario(); // Obtiene los datos del usuario actual.
+
+
+        // Calcula la cantidad de partidas jugadas por el usuario actual.
         // sacar esto despues si no se necesita
         $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
-        if (empty($cantidadDePartidas)) {
-            $cantidadDePartidas = 0;
-        } else {
-            $cantidadDePartidas = count($cantidadDePartidas);
-        }
+        $cantidadDePartidas = empty($cantidadDePartidas) ? 0 : count($cantidadDePartidas);
 
+        // Almacena en la sesión los usuarios de prueba.
         $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
+
 
         $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo();
         $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTortaPorSexos($datosBD);
@@ -49,6 +51,8 @@ class AdminController
             "acertadas" => $usuarioActual["cantidad_acertadas"],
             "respondidas" => $usuarioActual["cantidad_respondidas"],
         ];
+
+        // Renderiza la vista de administrador con los datos.
         $this->presenter->show("admin", $data);
     }
 
@@ -255,17 +259,20 @@ class AdminController
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
      * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
      */
-    private function validarUsuario(): mixed
+  private function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
-        $usuarioActual = $this->usuarioModel->getUsuarioPorId($usuarioActual["id"]);
-        $_SESSION["usuario"] = $usuarioActual;
-        if ($usuarioActual == null) {
-            $this->redireccionar("login");
+
+        if ($usuarioActual === null) {
+            $this->redireccionar("login"); 
+            exit();
         }
+
         $this->validarActivacion($usuarioActual);
-        return $usuarioActual;
+
+        return $usuarioActual; // Retorna el usuario actual si todo está bien.
     }
+
 
     /**
      * Valida que el usuario este verificado sino hace uso de <code>header</code> para redireccionar y que valide su correo.
@@ -296,5 +303,18 @@ class AdminController
     {
         echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
+
+    private function validarAdministrador(): void
+    {
+        $usuarioActual = $_SESSION["usuario"] ?? null;
+
+        // Si no hay usuario logueado o el usuario no es administrador, redirige.
+        if ($usuarioActual === null || !$this->usuarioModel->esAdmin($usuarioActual["id"])) {
+            error_log("Acceso denegado: Usuario actual " . print_r($usuarioActual, true)); // Log para depuración.
+            $this->redireccionar("home");
+            exit();
+        }
+    }
+
 
 }
