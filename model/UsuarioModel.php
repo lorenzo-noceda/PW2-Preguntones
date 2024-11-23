@@ -110,11 +110,6 @@ class UsuarioModel
     }
 
 
-
-
-
-
-
     // Consultas a la base de datos
 
     public function getRanking () {
@@ -260,7 +255,8 @@ class UsuarioModel
                    s.id AS sexoId, s.nombre AS sexoNombre ,
                    u.verificado,
                    u.cantidad_respondidas,
-                   u.cantidad_acertadas
+                   u.cantidad_acertadas,
+                   u.musica
             FROM usuario u
             JOIN sexo s ON u.id_sexo = s.id
             WHERE u.id = :id";
@@ -455,5 +451,16 @@ SELECT u.*,
         return $result["success"];
     }
 
+    public function actualizarMusica($idUsuario, $activarMusica){
 
+        $q = "UPDATE usuario
+              SET musica = :musica 
+              WHERE id = :id";
+
+        $params = [
+            ["columna" => "musica", "valor" => $activarMusica],
+             ["columna" => "id" , "valor" => $idUsuario]
+        ];
+        return $this->database->query($q, 'UPDATE', $params);
+    }
 }

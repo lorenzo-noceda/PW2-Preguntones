@@ -33,12 +33,15 @@ class JuegoController
         $_SESSION["id_partida"] = $data["id_partida"] ?? $_SESSION["id_partida"];
         // Guardar para verla como resultado (malo/bueno)
         $_SESSION["pregunta"] = $data["pregunta"];
+        $musica=$_SESSION['musica'];
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],
              "id_usuario" => $usuarioActual["id"],
              "tiempo_limite" => 10,
-             "tiempo_inicio" => time()];
+             "tiempo_inicio" => time(),
+                "musica" =>$musica
+            ];
         $this->presenter->show("juego", $data);
     }
 
