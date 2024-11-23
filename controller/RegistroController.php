@@ -94,6 +94,7 @@ class RegistroController
         $data = [
             "correoParaValidar" => $_SESSION["correoParaValidar"] ?? "nada crack.",
             "id_usuario" => $_SESSION["id_usuario"],
+            "mensaje" => "Revisa tu correo electrónico y valída el mismo."
         ];
         $this->presenter->show("validacionCorreo", $data);
     }

@@ -16,7 +16,7 @@ class HomeController
 
     public function list(): void
     {
-        $usuarioActual = $_SESSION["usuario"] ?? null;
+        $usuarioActual = $this->validarUsuario();
         $rol = $_SESSION["rol"] ?? null;
 
         if ($usuarioActual == null) {

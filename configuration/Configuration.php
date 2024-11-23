@@ -6,6 +6,7 @@ include_once(__DIR__ . "/../helper/MustachePresenter.php");
 include_once(__DIR__ . "/../helper/Database.php");
 include_once(__DIR__ . "/../helper/QRCodeGenerator.php");
 include_once(__DIR__ . "/../helper/MailPresenter.php");
+include_once(__DIR__ . "/../helper/Graficador.php");
 
 // Controllers
 include_once(__DIR__ . "/../controller/UsuarioController.php");
@@ -20,14 +21,19 @@ include_once(__DIR__ . "/../controller/AdminController.php");
 include_once(__DIR__ . "/../model/UsuarioModel.php");
 include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
 include_once(__DIR__ . "/../model/JuegoModel.php");
+include_once(__DIR__ . "/../model/GraficosModel.php");
 
+// Utiles de los heleprs
 include_once(__DIR__ . '/../vendor/mustache/src/Mustache/Autoloader.php');
 include_once(__DIR__ . '/../vendor/barcode-master/barcode.php');
-
-
 include_once(__DIR__ . '/../vendor/PHPMailer/src/Exception.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/PHPMailer.php');
 include_once(__DIR__ . '/../vendor/PHPMailer/src/SMTP.php');
+include_once(__DIR__ . '/../vendor/jpgraph-4.4.2/src/jpgraph.php');
+include_once(__DIR__ . '/../vendor/jpgraph-4.4.2/src/jpgraph_line.php');
+include_once(__DIR__ . '/../vendor/jpgraph-4.4.2/src/jpgraph_bar.php');
+include_once(__DIR__ . '/../vendor/jpgraph-4.4.2/src/jpgraph_pie.php');
+
 
 class Configuration
 {
@@ -80,11 +86,20 @@ class Configuration
         return new AdminController(
             $this->getJuegoModel(),
             $this->getPresenter(),
-            $this->getUsuarioModel());
+            $this->getUsuarioModel(),
+            $this->getGraficosModel()
+        );
+
     }
 
 
     // Modelos
+
+    private function getGraficosModel() {
+        return new GraficosModel(
+            $this->getGraficador(),
+        );
+    }
     private function getUsuarioModel()
     {
         return new UsuarioModel(
@@ -105,7 +120,7 @@ class Configuration
     }
 
     // Helpers
-    private function getQrCodeGenerator (): QRCodeGenerator
+    private function getQrCodeGenerator(): QRCodeGenerator
     {
         return new QRCodeGenerator();
     }
@@ -130,6 +145,11 @@ class Configuration
     private function getPresenter()
     {
         return new MustachePresenter("./view");
+    }
+
+    private function getGraficador()
+    {
+        return new Graficador();
     }
 
     private function getMailPresenter()

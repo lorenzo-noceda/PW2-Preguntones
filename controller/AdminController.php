@@ -3,16 +3,19 @@
 class AdminController
 {
 
-    private $juegoModel;
-    private $presenter;
+    private JuegoModel $juegoModel;
     private UsuarioModel $usuarioModel;
-
-    public function __construct($model, $presenter, UsuarioModel $usuarioModel)
+    private MustachePresenter $presenter;
+    private GraficosModel $graficosModel;
+    
+    public function __construct($juegoModel, $usuarioModel, $presenter, $graficosModel)
     {
-        $this->juegoModel = $model;
-        $this->presenter = $presenter;
+        $this->juegoModel = $juegoModel;
         $this->usuarioModel = $usuarioModel;
+        $this->presenter = $presenter;
+        $this->graficosModel = $graficosModel;
     }
+
 
     public function list(): void
     {
@@ -20,28 +23,53 @@ class AdminController
 
         $usuarioActual = $this->validarUsuario(); // Obtiene los datos del usuario actual.
 
+
         // Calcula la cantidad de partidas jugadas por el usuario actual.
+        // sacar esto despues si no se necesita
         $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
         $cantidadDePartidas = empty($cantidadDePartidas) ? 0 : count($cantidadDePartidas);
 
         // Almacena en la sesión los usuarios de prueba.
         $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
 
-        // Prepara los datos para la vista.
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo();
+        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTortaPorSexos($datosBD);
+
         $data = [
             "texto" => "Hola mundo",
-            "respondidas" => $this->juegoModel->getRespondidasDeUsuario($usuarioActual["id"]),
             "todas" => $this->juegoModel->getCantidadPreguntasBD(),
             "correctas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
             "malas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
             "usuarios" => $_SESSION["usuarios"],
             "partidasJugadas" => $this->juegoModel->getPartidas(),
-            "ranking" => $this->juegoModel->getRanking()
+            "ranking" => $this->juegoModel->getRanking(),
+            "tortaSexo" => $graficoTortaUsuariosSexo,
+            "jugadoresTotales" => $this->juegoModel->obtenerNumeroDeJugadores(),
+            "porcentajeAciertos" => $this->obtenerPorcentajeAciertos($usuarioActual),
+            "acertadas" => $usuarioActual["cantidad_acertadas"],
+            "respondidas" => $usuarioActual["cantidad_respondidas"],
         ];
 
         // Renderiza la vista de administrador con los datos.
         $this->presenter->show("admin", $data);
+    }
+
+    public function usuariosPorSexo () {
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo();
+        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTortaPorSexos($datosBD);
+
+        $data = [
+            "usuariosPorSexoGrafico" => $graficoTortaUsuariosSexo
+        ];
+        $this->presenter->show("adminGraficosUsuariosPorSexo", $data);
+    }
+
+    private function obtenerPorcentajeAciertos($usuario)
+    {
+        if ($usuario["cantidad_respondidas"] == 0) return 0;
+        return round(($usuario["cantidad_acertadas"] / $usuario["cantidad_respondidas"]) * 100, 2);
     }
 
     public function preguntas()
@@ -72,6 +100,7 @@ class AdminController
         } else echo "error devuelta";
     }
 
+    // Ver todas las "sugeridas" (pendientes)
     public function sugeridas()
     {
         $usuarioActual = $this->validarUsuario();
@@ -79,21 +108,56 @@ class AdminController
         $this->presenter->show("adminSugeridas", $data);
     }
 
+    // Ver una sugeria en específico
     public function verSugerida()
     {
         $idSugerida = $_GET["id"];
         $sugeridaCompleta = [
-            "pregunta" => $this->juegoModel->getPreguntaPorId($idSugerida),
-            "respuestas" => $this->juegoModel->getRespuestasDePregunta($idSugerida)
+            "pregunta" => $this->juegoModel->obtenerPreguntaPorId($idSugerida),
+            "respuestas" => $this->juegoModel->obtenerRespuestasDePregunta($idSugerida)
         ];
         $data["pregunta"] = $sugeridaCompleta["pregunta"];
         $data["respuestas"] = $sugeridaCompleta["respuestas"];
         $this->presenter->show("adminVerSugerida", $data);
     }
 
+    // Accions de preguntas sugeridas (activar, desactivar, rechazar)
     public function aprobar()
     {
+        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            $idPregunta = $_GET["id"];
+            $result = $this->juegoModel->aprobarPregunta($idPregunta);
+            if ($result) {
+                $data["mensaje"] = "¡Pregunta aprobada correctamente!";
+                $data["url"] = "admin";
+                $data["boton"] = "Volver a administración";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
+            } else {
+                $data["error"] = "¡Ups! No se pudo aprobar la pregunta.";
+                $this->presenter->show("error", $data);
+            }
+        } else {
+            $this->redireccionar("home");
+        }
+    }
 
+    public function rechazar()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+            $idPregunta = $_GET['id'];
+            $result = $this->juegoModel->rechazarPregunta($idPregunta);
+            if ($result) {
+                $data["mensaje"] = "Pregunta rechazada correctamente.";
+                $data["boton"] = "Volver a administración";
+                $data["url"] = "admin";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
+            } else {
+                $data["error"] = "¡Ups! No se pudo rechazar la pregunta.";
+                $this->presenter->show("error", $data);
+            };
+        } else {
+            $this->redireccionar("home");
+        }
     }
 
     public function desactivar()
@@ -104,11 +168,15 @@ class AdminController
             if ($result) {
                 $data["mensaje"] = "Pregunta desactivada correctamente.";
                 $data["boton"] = "Volver a administración";
-                $data["url"] = "admin/reportadas";
+                $data["url"] = "admin";
                 $this->presenter->show("mensajeProcesoCorrecto", $data);
-            } else echo "error";
+            } else {
+                $data["error"] = "¡Ups! No se pudo desactivar la pregunta.";
+                $this->presenter->show("error", $data);
+            };
+        } else {
+            $this->redireccionar("home");
         }
-
     }
 
     public function editar()
@@ -191,7 +259,7 @@ class AdminController
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
      * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
      */
-    private function validarUsuario(): mixed
+  private function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
 
@@ -233,7 +301,7 @@ class AdminController
 
     private function verVariable($data): void
     {
-        echo '<pre>' . print_r($data, true) . '</pre>';
+        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
 
     private function validarAdministrador(): void
