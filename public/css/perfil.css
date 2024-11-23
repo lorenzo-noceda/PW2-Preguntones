@@ -1,0 +1,57 @@
+.radio-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 15px;
+}
+
+.radio-container input[type="radio"] {
+    display: none;
+}
+
+.radio-container label {
+    position: relative;
+    padding-left: 30px;
+    font-size: 1em;
+    cursor: pointer;
+    color: #555;
+    transition: color 0.3s ease;
+}
+
+.radio-container label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #aaa;
+    background-color: #fff;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#musicaSi:checked + label:before {
+    background-color: #203bba;
+    border-color: #203bba;
+}
+#musicaSi:checked + label {
+    color: #ffffff;
+}
+
+#musicaNo:checked + label:before {
+    background-color: #203bba;
+    border-color: #203bba;
+}
+#musicaNo:checked + label {
+    color: #ffffff;
+}
+
+.radio-container label:hover {
+    color: #ffffff;
+}
+
+.radio-container label:hover:before {
+    border-color: #f6f6f6;
+}
