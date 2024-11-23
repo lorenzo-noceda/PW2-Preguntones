@@ -85,8 +85,8 @@ class Configuration
     {
         return new AdminController(
             $this->getJuegoModel(),
-            $this->getPresenter(),
             $this->getUsuarioModel(),
+            $this->getPresenter(),
             $this->getGraficosModel()
         );
 
