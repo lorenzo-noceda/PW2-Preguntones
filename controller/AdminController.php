@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../vendor/fpdf186/fpdf.php';
 
 class AdminController
 {
@@ -7,7 +8,8 @@ class AdminController
     private UsuarioModel $usuarioModel;
     private MustachePresenter $presenter;
     private GraficosModel $graficosModel;
-    
+
+
     public function __construct($juegoModel, $usuarioModel, $presenter, $graficosModel)
     {
         $this->juegoModel = $juegoModel;
@@ -254,6 +256,64 @@ class AdminController
             }
         }
     }
+
+    public function generarPDF(): void
+    {
+        // Validar que el usuario es administrador.
+        $this->validarAdministrador();
+
+        // Obtener datos dinámicos, como las partidas jugadas o ranking.
+        $partidasJugadas = $this->juegoModel->getPartidas();
+        $ranking = $this->juegoModel->getRanking();
+
+        // Generar gráfico de usuarios por sexo
+        $datosPorSexo = $this->usuarioModel->obtenerUsuariosPorSexo(); // Debes implementar este método para obtener los datos
+        $graficosModel = new GraficosModel(new Graficador());
+        $rutaGraficoSexo = $graficosModel->generarGraficoDeTortaPorSexos($datosPorSexo);
+
+        // Inicializar FPDF
+        $pdf = new FPDF;
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 16);
+
+        // Título del PDF
+        $pdf->Cell(0, 10, 'Reporte de Administración', 0, 1, 'C');
+        $pdf->Ln(10);
+
+        // Agregar tabla de Partidas Jugadas
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(0, 10, 'Partidas Jugadas', 0, 1);
+        $pdf->SetFont('Arial', '', 10);
+        foreach ($partidasJugadas as $partida) {
+            $pdf->Cell(50, 10, "ID Partida: " . $partida['id'], 1);
+            $pdf->Cell(50, 10, "ID Usuario: " . $partida['jugador_id'], 1);
+            $pdf->Cell(50, 10, "Puntaje: " . $partida['puntaje'], 1);
+            $pdf->Ln();
+        }
+        $pdf->Ln(10);
+
+        // Agregar tabla de Ranking
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(0, 10, 'Ranking', 0, 1);
+        $pdf->SetFont('Arial', '', 10);
+        foreach ($ranking as $rank) {
+            $pdf->Cell(50, 10, "Usuario: " . $rank['username'], 1);
+            $pdf->Cell(50, 10, "Puntaje Máximo: " . $rank['puntaje_maximo'], 1);
+            $pdf->Ln();
+        }
+        $pdf->Ln(10);
+
+        // Agregar gráfico de usuarios por sexo
+        $pdf->SetFont('Arial', 'B', 12);
+        $pdf->Cell(0, 10, 'Gráfico de Usuarios por Sexo', 0, 1);
+        $pdf->Image($rutaGraficoSexo, 10, $pdf->GetY(), 100); // Ajusta la posición y tamaño de la imagen
+        $pdf->Ln(50);
+
+        // Salida del PDF al navegador
+        $pdf->Output('I', 'Reporte_Admin.pdf');
+    }
+
+
 
     /**
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
