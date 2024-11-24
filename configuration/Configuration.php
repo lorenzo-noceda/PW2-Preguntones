@@ -9,7 +9,6 @@ include_once(__DIR__ . "/../helper/MailPresenter.php");
 include_once(__DIR__ . "/../helper/Graficador.php");
 
 // Controllers
-include_once(__DIR__ . "/../controller/UsuarioController.php");
 include_once(__DIR__ . "/../controller/HomeController.php");
 include_once(__DIR__ . "/../controller/RegistroController.php");
 include_once(__DIR__ . "/../controller/LoginController.php");
@@ -19,7 +18,6 @@ include_once(__DIR__ . "/../controller/AdminController.php");
 
 // Models
 include_once(__DIR__ . "/../model/UsuarioModel.php");
-include_once(__DIR__ . "/../model/PaisYCiudadModel.php");
 include_once(__DIR__ . "/../model/JuegoModel.php");
 include_once(__DIR__ . "/../model/GraficosModel.php");
 
@@ -42,10 +40,6 @@ class Configuration
     }
 
     // Controllers
-    public function getUsuarioController()
-    {
-        return new UsuarioController($this->getUsuarioModel(), $this->getPresenter());
-    }
 
     public function getHomeController()
     {
@@ -58,7 +52,7 @@ class Configuration
 
     public function getRegistroController()
     {
-        return new RegistroController($this->getUsuarioModel(), $this->getPresenter(), $this->getPaisYCiudadModel());
+        return new RegistroController($this->getUsuarioModel(), $this->getPresenter());
     }
 
     public function getLoginController()
@@ -70,7 +64,6 @@ class Configuration
     {
         return new PerfilController(
             $this->getUsuarioModel(),
-            $this->getPaisYCiudadModel(),
             $this->getPresenter());
     }
 
@@ -107,11 +100,6 @@ class Configuration
             $this->getMailPresenter(),
             $this->getQrCodeGenerator()
         );
-    }
-
-    private function getPaisYCiudadModel()
-    {
-        return new PaisYCiudadModel($this->getDatabase());
     }
 
     private function getJuegoModel()

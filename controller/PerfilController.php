@@ -4,13 +4,11 @@ class PerfilController
 {
 
     private $usuarioModel;
-    private $paisModel;
     private $presenter;
 
-    public function __construct($usuarioModel, $paisModel, $presenter)
+    public function __construct($usuarioModel, $presenter)
     {
         $this->usuarioModel = $usuarioModel;
-        $this->paisModel = $paisModel;
         $this->presenter = $presenter;
     }
 
@@ -36,7 +34,6 @@ class PerfilController
         $this->validarUsuario();
         $id = $_GET["id"] ?? null;
         $data["usuario"] = $this->usuarioModel->getUsuarioPorId($id);
-        $data["paises"] = $this->paisModel->getPaisesMenosElDelUsuario($data["usuario"]["pais"]);
         $data["sexo"] = $this->usuarioModel->getSexosMenosElDelUsuario($data["usuario"]["sexoNombre"]);
         $this->presenter->show("editarPerfil", $data);
     }

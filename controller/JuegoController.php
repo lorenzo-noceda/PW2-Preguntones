@@ -34,11 +34,12 @@ class JuegoController
         // Guardar para verla como resultado (malo/bueno)
         $_SESSION["pregunta"] = $data["pregunta"];
         $musica=$_SESSION['musica'];
+        $tiempoLimite = 10+$_SESSION["tiempo_inicio"]-time();
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],
              "id_usuario" => $usuarioActual["id"],
-             "tiempo_limite" => 10,
+             "tiempo_limite" => $tiempoLimite,
              "tiempo_inicio" => time(),
                 "musica" =>$musica
             ];
@@ -98,6 +99,14 @@ class JuegoController
     // TODO: sacar if's del controlador y mandarlos al modelo
 
     public function validarRespuesta(){
+        if(!isset($_SESSION["id_partida"])){
+            $this->redireccionar("home");
+        }
+
+        if(!isset($_SESSION["id_pregunta"])){
+            $this->redireccionar("juego/empezar");
+        }
+
         unset($_SESSION["id_pregunta"]);
         // Valido ingreso por $_POST
         $parametros = $this->validarPreguntaRespuestaRecibidas();
@@ -125,11 +134,7 @@ class JuegoController
         $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] ?? null;
         $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] ?? null;
 
-        $_SESSION["correcta_str"] = $respuesta["respuestaCorrecta_str"] != null ? $respuesta["respuestaCorrecta_str"] : null;
-        $_SESSION["incorrecta_str"] = $respuesta["respuestaIncorrecta_str"] != null ? $respuesta["respuestaIncorrecta_str"] : null;
-
         $error = $this->model->actualizarRespondidas($idUsuario, $preguntaId);
-
         if($error){
             $this->empezar();
         }

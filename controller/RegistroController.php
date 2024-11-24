@@ -5,22 +5,17 @@ class RegistroController
     private $usuarioModel;
     private $presenter;
 
-    private $paisesModel;
-
-    public function __construct($usuarioModel, $presenter, $paisesModel)
+    public function __construct($usuarioModel, $presenter)
     {
         $this->usuarioModel = $usuarioModel;
         $this->presenter = $presenter;
-        $this->paisesModel = $paisesModel;
     }
 
     public function list()
     {
-        $_SESSION["paises"] = $this->paisesModel->getPaises();
         $_SESSION["sexo"] = $this->usuarioModel->getSexos();
 
         $data = [
-            'paises' => $_SESSION["paises"],
             "sexo" => $_SESSION["sexo"],
             "error" => $_SESSION["error"] ?? null,
         ];
@@ -97,14 +92,6 @@ class RegistroController
             "mensaje" => "Revisa tu correo electrónico y valída el mismo."
         ];
         $this->presenter->show("validacionCorreo", $data);
-    }
-
-
-    public function getCiudades()
-    {
-        $id = $_GET["id"];
-        $variablesCiudades = $this->paisesModel->getCiudades($id);
-        echo json_encode($variablesCiudades);
     }
 
     private function obtenerDatosDelUsuario(): array
