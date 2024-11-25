@@ -32,6 +32,45 @@ class UsuarioModel
         return $usuarioBuscado;
     }
 
+    public function obtenerUsuariosPorPais ($tiempo) {
+        $usuarios = $this->obtenerUbicacionUsuarios($tiempo);
+        $paises = [];
+        foreach ($usuarios as $usuario) {
+            $pais = $this->obtenerPaisCiudad($usuario['latitud'], $usuario['longitud'])["pais"];
+            if ($pais == null) $pais = "No definido";
+            if (!isset($paises[$pais])) {
+                $paises[$pais] = 0;
+            }
+            $paises[$pais]++;
+        }
+        // Crear un nuevo array con el formato que necesitas
+        $resultado = [];
+        // Recorrer el array de países y transformar el formato
+        foreach ($paises as $pais => $cantidad) {
+            $resultado[] = [
+                'pais' => $pais,  // Usamos el nombre del país como 'grupo_etario'
+                'cantidad' => $cantidad   // La cantidad de usuarios por país
+            ];
+        }
+        return $resultado;
+    }
+    public function obtenerUbicacionUsuarios($dias = 360)
+    {
+        $q = "SELECT u.id,
+                     u.latitud,          
+                     u.longitud 
+              FROM usuario u
+              WHERE u.fecha_registro >= CURDATE() - INTERVAL :dias DAY";
+        $params = [
+            ["columna" => "dias", "valor" => $dias]
+        ];
+        $result = $this->database->query($q, "MULTIPLE",$params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else return $result["success"];
+    }
+
+
     private function obtenerPaisCiudad($latitud, $longitud)
     {
         $apiKey = 'AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc';
@@ -61,6 +100,22 @@ class UsuarioModel
         ];
     }
 
+    public function enviarMailValidacion($emailUsuario, $nombreUsuario)
+    {
+        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
+        $this->mailPresenter->setSubject('Confirmación de registro');
+        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
+
+        try {
+            if ($this->mailPresenter->sendEmail()) {
+                echo 'El correo ha sido enviado';
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    // CONSULTAS A LA BASE DE DATOS
 
     public function guardarJugador($usuario)
     {
@@ -84,37 +139,17 @@ class UsuarioModel
     }
 
 
-    public function enviarMailValidacion($emailUsuario, $nombreUsuario)
-    {
-        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
-        $this->mailPresenter->setSubject('Confirmación de registro');
-        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
-
-        try {
-            if ($this->mailPresenter->sendEmail()) {
-                echo 'El correo ha sido enviado';
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     public function getVerificacionDeUsuario($idusuario)
     {
         if ($idusuario != null) {
-            $q = "
-        SELECT verificado 
-        FROM usuario
-        WHERE id = :id";
+            $q = "SELECT verificado FROM usuario WHERE id = :id";
             $params = [
                 ["columna" => "id", "valor" => $idusuario],
             ];
             $result = $this->database->query($q, "SINGLE", $params);
             if ($result["success"]) {
                 return $result["data"];
-            } else {
-                return [];
-            }
+            } else return [];
         } else {
             return [];
             // Manejar que pasa si llega null
@@ -138,9 +173,6 @@ class UsuarioModel
     {
         return $this->database->getUltimoIdGenerado();
     }
-
-
-    // Consultas a la base de datos
 
     public function getRanking()
     {
@@ -491,6 +523,26 @@ class UsuarioModel
         return $result["success"];
     }
 
+    public function obtenerCantidadDePartidasPorTiempo() {
+        $q = "SELECT 
+                CASE 
+                    WHEN fecha_jugada >= CURDATE() - INTERVAL 1 DAY THEN 'Último Día'
+                    WHEN fecha_jugada >= CURDATE() - INTERVAL 7 DAY THEN 'Última Semana'
+                    WHEN fecha_jugada >= CURDATE() - INTERVAL 1 MONTH THEN 'Último Mes'
+                    WHEN fecha_jugada >= CURDATE() - INTERVAL 1 YEAR THEN 'Último Año'
+                    ELSE 'Todos los Tiempos'
+                END AS periodo,
+                COUNT(*) AS cantidad_partidas
+            FROM partida
+            GROUP BY periodo
+            ORDER BY FIELD(periodo, 'Último Día', 'Última Semana', 'Último Mes', 'Último Año', 'Todos los Tiempos')";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
     public function obtenerCantidadDeUsuariosPorTiempo()
     {
         $q = "SELECT 
@@ -556,11 +608,15 @@ class UsuarioModel
         $q = "UPDATE usuario
               SET musica = :musica 
               WHERE id = :id";
-
         $params = [
             ["columna" => "musica", "valor" => $activarMusica],
             ["columna" => "id", "valor" => $idUsuario]
         ];
         return $this->database->query($q, 'UPDATE', $params);
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
 }

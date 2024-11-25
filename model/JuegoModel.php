@@ -11,34 +11,70 @@ class JuegoModel
         $this->database = $database;
     }
 
-    private function obtenerPreguntaAprobadaPorId($idPregunta)
-    {
-        $q = "SELECT 
-              p.id as id,
-              p.texto as pregunta_str
-              FROM pregunta p 
-              JOIN estado e ON e.id = p.id_estado AND e.id = 2
-              WHERE p.id = :idPregunta";
-        $params = [
-            ["columna" => "idPregunta", "valor" => $idPregunta]
-        ];
-        $result = $this->database->query($q, "SINGLE", $params);
-        if ($result["success"]) {
-            return $result["data"];
-        } else return $result["success"];
+    private function buscarPreguntasParaUsuarioPorNivel($idUsuario) {
+        $nivelUsuario = $this->obtenerNivelDeUsuario($idUsuario);
+        $resultado = $this->saberMinMaxSegunNivelDeUsuario($nivelUsuario);
+        $minimo = $resultado["minimo"];
+        $maximo = $resultado["maximo"];
+        unset($resultado);
+        $preguntas = $this->obtenerPreguntasParaUsuarioPorNivel($idUsuario, $minimo, $maximo);
+        if (!empty($preguntas)) {
+            return $preguntas;
+        } else return false;
     }
 
+    private function obtenerNivelDeUsuario($idUsuario): ?string
+    {
+        $respondidas = $this->obtenerCantidadRespondidasPorUsuario($idUsuario);
+        if ($respondidas < 10) {
+            return self::NIVEL_MEDIO;
+        }
+        $acertadas = $this->obtenerCantidadAcertadasPorUsuario($idUsuario);
+        $nivelUsuario = $acertadas / $respondidas;
+
+        return match (true) {
+            $nivelUsuario <= 0.3 => self::NIVEL_BAJO,   // De 0 a 0.3
+            $nivelUsuario <= 0.7 => self::NIVEL_MEDIO,  // De 0.3 a 0.7
+            $nivelUsuario <= 1.0 => self::NIVEL_ALTO,   // De 0.7 a 1
+            default => null
+        };
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function actualizarRespondidas($idUsuario, $idPregunta)
+    {
+        try {
+            $this->database->beginTransaction();
+            $this->actualizarRespondidasUsuario($idUsuario);
+            $this->actualizarRespondidasPregunta($idPregunta);
+            $this->database->commit();
+        } catch (Exception $e) {
+            $this->database->rollBack();
+            throw new Exception($e->getMessage());
+        }
+    }
+
+    public function actualizarAcertadas($idUsuario, $idPregunta)
+    {
+        $this->actualizarAcertadasUsuario($idUsuario);
+        $this->actualizarAcertadasPregunta($idPregunta);
+    }
 
     public function empezar($idUsuario, $idPregunta = false): array
     {
         // Anti f5 y para que no responda lo que no le dí
         if ($idPregunta) {
+            $this->verVariable("No recargues, y no te salgas. La pregunta será la misma bobo.");
             $data["pregunta"] = $this->obtenerPreguntaAprobadaPorId($idPregunta);
         } else {
             // Si empieza
             $pregunta = $this->getPreguntaRandom($idUsuario);
             if ($pregunta == null) {
-                $data["error"] = "No hay preguntas disponibles";
+                $data["mensaje"] = "No hay preguntas disponibles";
+                $data["url"] = "home";
+                $data["boton"] = "Volver al inicio";
                 return $data;
             } else {
                 $data["pregunta"] = $pregunta;
@@ -48,7 +84,6 @@ class JuegoModel
             }
         }
 
-        $this->verVariable($data);
         $data["respuestas"] = $this->obtenerRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
         return $data;
@@ -81,9 +116,9 @@ class JuegoModel
         return false;
     }
 
-    private function hayMasPreguntasParaUsuario($idUsuario)
+    private function hayMasPreguntasParaUsuario($idUsuario): bool
     {
-        $result = $this->buscarPreguntasParaUsuario($idUsuario);
+        $result = $this->obtenerPreguntasParaUsuario($idUsuario);
         if (count($result["data"]) > 0) {
             return true;
         }
@@ -129,6 +164,7 @@ class JuegoModel
 
     private function getPreguntaRandom($idUsuario)
     {
+        $this->verVariable("Obteniendo pregunta random");
         // Obtener preguntas no respondidas en el nivel del jugador
         $result = $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
         if (empty($result)) {
@@ -257,18 +293,7 @@ class JuegoModel
     }
 
     // Métodos para desarrollo
-
-    public function getUsuariosTest()
-    {
-        $q = "SELECT u.* FROM usuario u
-              JOIN jugador j ON u.id = j.id";
-        $result = $this->database->query($q, 'MULTIPLE', []);
-        if ($result["success"]) {
-            return $result["data"];
-        }
-        return $result;
-    }
-
+    
     public function resetPartidasDelUsuario($idUsuario)
     {
         $q = "DELETE FROM partida
@@ -589,8 +614,8 @@ class JuegoModel
         $preguntasDelNivelDelUsuario = $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
 
         // hay preguntas de su nivel que todavía no respondió
-        if (!empty($preguntasDelNivelDelUsuario["data"])) {
-            return $preguntasDelNivelDelUsuario["data"];
+        if (!empty($preguntasDelNivelDelUsuario)) {
+            return $preguntasDelNivelDelUsuario;
         } else {
             $result = $this->resetearPreguntasRespondidasPorUsuario($idUsuario);
             if ($result) {
@@ -661,21 +686,6 @@ class JuegoModel
         return $result["success"];
     }
 
-    /**
-     * @throws Exception
-     */
-    public function actualizarRespondidas($idUsuario, $idPregunta)
-    {
-        try {
-            $this->database->beginTransaction();
-            $this->actualizarRespondidasUsuario($idUsuario);
-            $this->actualizarRespondidasPregunta($idPregunta);
-            $this->database->commit();
-        } catch (Exception $e) {
-            $this->database->rollBack();
-            throw new Exception($e->getMessage());
-        }
-    }
 
     private function actualizarRespondidasUsuario($idUsuario)
     {
@@ -697,11 +707,6 @@ class JuegoModel
         return $this->database->query($q, 'UPDATE', $params);
     }
 
-    public function actualizarAcertadas($idUsuario, $idPregunta)
-    {
-        $this->actualizarAcertadasUsuario($idUsuario);
-        $this->actualizarAcertadasPregunta($idPregunta);
-    }
 
     private function actualizarAcertadasUsuario($idUsuario)
     {
@@ -731,25 +736,6 @@ class JuegoModel
             return $result["data"];
         }
         return $result["success"];
-    }
-
-
-    private function obtenerNivelDeUsuario($idUsuario)
-    {
-        $respondidas = $this->obtenerCantidadRespondidasPorUsuario($idUsuario);
-        if ($respondidas < 10) {
-            return self::NIVEL_MEDIO;
-        }
-        $acertadas = $this->obtenerCantidadAcertadasPorUsuario($idUsuario);
-        $nivelUsuario = $acertadas / $respondidas;
-        switch ($nivelUsuario) {
-            case $nivelUsuario < 0.3:
-                return self::NIVEL_BAJO;
-            case $nivelUsuario < 0.71:
-                return self::NIVEL_MEDIO;
-            default:
-                return self::NIVEL_ALTO;
-        }
     }
 
     private function obtenerCantidadRespondidasPorUsuario($idUsuario)
@@ -796,34 +782,20 @@ class JuegoModel
         return $resultado["data"]["cantidad_acertadas"] ?? 0;
     }
 
-    private function buscarPreguntasParaUsuarioPorNivel($idUsuario)
+    private function obtenerPreguntasParaUsuarioPorNivel($idUsuario, $minimo, $maximo)
     {
-        $nivelUsuario = $this->obtenerNivelDeUsuario($idUsuario);
-
-        switch ($nivelUsuario) {
-            case $nivelUsuario === 'ALTO':
-                $minimo = 0;
-                $maximo = 0.29;
-                break;
-            case $nivelUsuario === 'MEDIO':
-                $minimo = 0.3;
-                $maximo = 0.7;
-                break;
-            default:
-                $minimo = 0.71;
-                $maximo = 1;
-        }
-
-
-        $q = "SELECT p.id as id, p.texto as pregunta_str
+        $q = "SELECT p.id as id, p.texto as pregunta_str, p.cantidad_acertadas, p.cantidad_respondidas
               FROM pregunta p 
               LEFT JOIN usuario_pregunta up 
                   ON p.id = up.pregunta_id AND up.usuario_id = :id
               JOIN estado e
                   ON p.id_estado = e.id AND e.id = 2
               WHERE up.pregunta_id IS NULL
-              AND p.cantidad_respondidas >= 5
-              AND p.cantidad_acertadas/p.cantidad_respondidas BETWEEN :minimo AND :maximo
+              AND p.cantidad_respondidas >= 0 -- antes 5
+              AND (
+                  p.cantidad_acertadas/p.cantidad_respondidas BETWEEN :minimo AND :maximo 
+                      OR p.cantidad_respondidas = 0
+                  )
               ORDER BY RAND()";
 
         $params = [
@@ -833,12 +805,13 @@ class JuegoModel
         ];
 
         $result = $this->database->query($q, 'MULTIPLE', $params);
+
         if ($result["success"]) {
             return $result["data"];
         } else return $result["success"];
     }
 
-    private function buscarPreguntasParaUsuario($idUsuario)
+    private function obtenerPreguntasParaUsuario($idUsuario)
     {
         $q = "SELECT p.id as id, p.texto as pregunta_str
               FROM pregunta p 
@@ -906,9 +879,10 @@ class JuegoModel
      */
     private function resetearPreguntasRespondidasPorUsuario($idUsuario): bool
     {
+        $this->verVariable("Reseteo las que respondió.");
+
         $q = "DELETE FROM usuario_pregunta
               WHERE usuario_id = :id";
-        echo "reseteo de preguntas respondidas";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
@@ -917,7 +891,7 @@ class JuegoModel
         return $result["success"];
     }
 
-    /** Actualizar pregunta (texto, categoria, FALTA ESTADO)
+    /** Actualizar pregunta (texto, categoria, estado)
      * @param string $texto
      * @param int $idCategoria
      * @param int $idPregunta
@@ -982,6 +956,23 @@ class JuegoModel
         return $result["success"];
     }
 
+    private function obtenerPreguntaAprobadaPorId($idPregunta)
+    {
+        $q = "SELECT 
+              p.id as id,
+              p.texto as pregunta_str
+              FROM pregunta p 
+              JOIN estado e ON e.id = p.id_estado AND e.id = 2
+              WHERE p.id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => $idPregunta]
+        ];
+        $result = $this->database->query($q, "SINGLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else return $result["success"];
+    }
+
     private function convertirRespuestas($respuestas, $idPregunta): array
     {
         $result = [];
@@ -990,6 +981,24 @@ class JuegoModel
             $result[] = $r;
         }
         return $result;
+    }
+
+    private function saberMinMaxSegunNivelDeUsuario($nivel): array
+    {
+        switch ($nivel) {
+            case $nivel === 'ALTO':
+                $minimo = 0;
+                $maximo = 0.29;
+                break;
+            case $nivel === 'MEDIO':
+                $minimo = 0.3;
+                $maximo = 0.7;
+                break;
+            default:
+                $minimo = 0.71;
+                $maximo = 1;
+        }
+        return ["minimo" => $minimo, "maximo" => $maximo];
     }
 
     private function verVariable($data): void
