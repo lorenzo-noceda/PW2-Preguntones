@@ -40,8 +40,16 @@ class PerfilController
     }
 
     public function actualizar()
-    {
-        echo "<h1>En desarrollo</h1>";
+        $id = $_SESSION["usuario"]["id"] ?? null;
+
+        $data = [
+            'nombre' => $_POST['nombre'],
+            'apellido' => $_POST['apellido'],
+            'anio_nacimiento' => $_POST['anio_nacimiento'],
+            'id_sexo' => $_POST['id_sexo'],
+        ];
+        $this->usuarioModel->actualizarUsuario($id, $data);
+        $this->presenter->show("perfilEditado");
     }
 
     private function validarUsuario(): void
