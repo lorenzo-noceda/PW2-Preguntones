@@ -95,21 +95,6 @@ class UsuarioModel
         ];
     }
 
-    public function enviarMailValidacion($emailUsuario, $nombreUsuario)
-    {
-        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
-        $this->mailPresenter->setSubject('Confirmación de registro');
-        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
-
-        try {
-            if ($this->mailPresenter->sendEmail()) {
-                echo 'El correo ha sido enviado';
-            }
-        } catch (Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
     // CONSULTAS A LA BASE DE DATOS
 
     public function guardarJugador($usuario)
@@ -601,7 +586,6 @@ SELECT u.*,
                 ["columna" => $clave, "valor" => $valor],
                 ["columna" => "id" , "valor" => $idUsuario]
             ];
-            var_dump($params);
             $this->database->query($q, 'UPDATE', $params);
         }
     }
