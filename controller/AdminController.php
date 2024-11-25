@@ -22,7 +22,6 @@ class AdminController
     public function list(): void
     {
         $this->validarAdministrador(); // Asegura que el usuario es administrador.
-
         $usuarioActual = $this->validarUsuario(); // Obtiene los datos del usuario actual.
 
 
@@ -34,10 +33,6 @@ class AdminController
         // Almacena en la sesión los usuarios de prueba.
         $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
 
-
-        $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo();
-        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTortaPorSexos($datosBD);
-
         $data = [
             "texto" => "Hola mundo",
             "todas" => $this->juegoModel->getCantidadPreguntasBD(),
@@ -47,7 +42,6 @@ class AdminController
             "usuarios" => $_SESSION["usuarios"],
             "partidasJugadas" => $this->juegoModel->getPartidas(),
             "ranking" => $this->juegoModel->getRanking(),
-            "tortaSexo" => $graficoTortaUsuariosSexo,
             "jugadoresTotales" => $this->juegoModel->obtenerNumeroDeJugadores(),
             "porcentajeAciertos" => $this->obtenerPorcentajeAciertos($usuarioActual),
             "acertadas" => $usuarioActual["cantidad_acertadas"],
@@ -59,13 +53,58 @@ class AdminController
     }
 
     public function usuariosPorSexo () {
-        $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo();
-        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTortaPorSexos($datosBD);
+        $tiempo = $_GET["time"] ?? 360;
+        $datosBD = array_column($this->usuarioModel->obtenerUsuariosPorSexo($tiempo), "cantidad");
+
+        if (empty($datosBD)) {
+            echo "no hay datos";
+            return;
+        }
+        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios por sexo",
+            $datosBD,
+            ["blue", "red", "yellow"],
+            ["Femenino", "Masculino", "Prefiere no decirlo"],
+            true
+        );
 
         $data = [
-            "usuariosPorSexoGrafico" => $graficoTortaUsuariosSexo
+            "usuariosPorSexoGrafico" => $graficoTortaUsuariosSexo,
+            "texto" => $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
+
         ];
         $this->presenter->show("adminGraficosUsuariosPorSexo", $data);
+    }
+
+    public function usuariosPorEdad () {
+        $tiempo = $_GET["time"] ?? 9999;
+        $this->verVariable("tiempo $tiempo");
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorEdad($tiempo);
+
+        $graficoUsuariosPorEdad = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios por edad",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red", "yellow"],
+            array_column($datosBD, "grupo_etario"),
+            true
+        );
+
+        $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
+        $this->verVariable($datosBD);
+        $graficoUsuarios = $this->graficosModel->generarGraficoDeBarras(
+            "Usuarios",
+            array_column($datosBD, "cantidad_usuarios"),
+            "Usuarios XD",
+            array_column($datosBD, "periodo"),
+        );
+
+        $data = [
+            "usuariosPorEdad" => $graficoUsuariosPorEdad,
+            "usuarios" => $graficoUsuarios,
+            "texto" => $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
+        ];
+        $this->presenter->show("adminGraficosUsuariosPorEdad", $data);
     }
 
     private function obtenerPorcentajeAciertos($usuario)
@@ -186,21 +225,25 @@ class AdminController
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             $idPregunta = $_GET['id'];
             $categorias = $this->juegoModel->getCategoriasMenosLaDePregunta($idPregunta);
+            $estados = $this->juegoModel->obtenerEstadosMenosElDePregunta($idPregunta);
 
-            $respuestas = $this->juegoModel->getRespuestasDePregunta($idPregunta);
-            $pregunta = $this->juegoModel->getPreguntaPorId($idPregunta);
+            $respuestas = $this->juegoModel->obtenerRespuestasDePregunta($idPregunta);
+            $pregunta = $this->juegoModel->obtenerPreguntaPorId($idPregunta);
 
             $idAumentado = 1;
             foreach ($respuestas as &$respuesta) {
                 $respuesta["idAumentado"] = $idAumentado++;
                 $respuesta["checked"] = $respuesta["esCorrecta"] ? "checked" : "";
             }
+
+            $data = [
+                "pregunta" => $pregunta,
+                "respuestas" => $respuestas,
+                "categorias" => $categorias,
+                "estados" => $estados
+            ];
+
             unset($respuesta);
-
-            $data["respuestas"] = $respuestas;
-            $data["pregunta"] = $pregunta;
-            $data["categorias"] = $categorias;
-
             $this->presenter->show("adminEditarPregunta", $data);
         }
 
@@ -213,7 +256,7 @@ class AdminController
             $result = $this->juegoModel->actualizarPregunta($data);
 
             if (!empty($result)) {
-                $d["mensaje"] = "Actualizado correctamente.";
+                $d["mensaje"] = "Pregunta actualizada correctamente.";
                 $d["url"] = "admin/preguntas";
                 $d["boton"] = "Volver a administración";
                 $this->presenter->show("mensajeProcesoCorrecto", $d);
@@ -234,6 +277,7 @@ class AdminController
             "respuestas" => $_POST["respuestas"],
             "nroRespuestaCorrecta" => (int)$_POST["correcta"] - 1,
             "idCategoria" => $_POST["categoria"],
+            "idEstado" => $_POST["estado"],
         ];
     }
 
@@ -359,10 +403,7 @@ class AdminController
         exit();
     }
 
-    private function verVariable($data): void
-    {
-        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
-    }
+
 
     private function validarAdministrador(): void
     {
@@ -372,8 +413,12 @@ class AdminController
         if ($usuarioActual === null || !$this->usuarioModel->esAdmin($usuarioActual["id"])) {
             error_log("Acceso denegado: Usuario actual " . print_r($usuarioActual, true)); // Log para depuración.
             $this->redireccionar("home");
-            exit();
         }
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
 
 

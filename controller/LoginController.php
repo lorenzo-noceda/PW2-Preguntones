@@ -4,7 +4,7 @@ use JetBrains\PhpStorm\NoReturn;
 class LoginController
 {
 
-    private $usuarioModelo;
+    private UsuarioModel $usuarioModelo;
     private $presenter;
 
     public function __construct($usuarioModelo, $presenter)

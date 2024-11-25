@@ -5,7 +5,7 @@ use JetBrains\PhpStorm\NoReturn;
 class JuegoController
 {
 
-    private $model;
+    private JuegoModel $model;
     private $presenter;
 
     public function __construct($model, $presenter)
@@ -29,12 +29,17 @@ class JuegoController
 
         $data = $this->model->empezar($usuarioActual["id"], $_SESSION["id_pregunta"] ?? null);
 
+        if (isset($data["error"])) {
+            $this->presenter->show("error", $data);
+            return;
+        }
+
         $_SESSION["id_pregunta"] = $data["id_pregunta"] ?? $_SESSION["id_pregunta"];
         $_SESSION["id_partida"] = $data["id_partida"] ?? $_SESSION["id_partida"];
         // Guardar para verla como resultado (malo/bueno)
         $_SESSION["pregunta"] = $data["pregunta"];
         $musica=$_SESSION['musica'];
-        $tiempoLimite = 10+$_SESSION["tiempo_inicio"]-time();
+        $tiempoLimite = 120+$_SESSION["tiempo_inicio"]-time();
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],
@@ -119,7 +124,7 @@ class JuegoController
 
         $pregunta = $this->model->obtenerPreguntaPorId($preguntaId);
 
-        $tiempoLimite = $_SESSION["tiempo_inicio"] + 10;
+        $tiempoLimite = $_SESSION["tiempo_inicio"] + 120;
 
         if(time() > $tiempoLimite){
             $this->model->guardarRespuesta($idUsuario, $pregunta["id"], $idPartida, 0);

@@ -11,17 +11,44 @@ class JuegoModel
         $this->database = $database;
     }
 
+    private function obtenerPreguntaAprobadaPorId($idPregunta)
+    {
+        $q = "SELECT 
+              p.id as id,
+              p.texto as pregunta_str
+              FROM pregunta p 
+              JOIN estado e ON e.id = p.id_estado AND e.id = 2
+              WHERE p.id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => $idPregunta]
+        ];
+        $result = $this->database->query($q, "SINGLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else return $result["success"];
+    }
+
 
     public function empezar($idUsuario, $idPregunta = false): array
     {
+        // Anti f5 y para que no responda lo que no le dí
         if ($idPregunta) {
-            $data["pregunta"] = $this->obtenerPreguntaPorId($idPregunta);
+            $data["pregunta"] = $this->obtenerPreguntaAprobadaPorId($idPregunta);
         } else {
-            $data["pregunta"] = $this->getPreguntaRandom($idUsuario);
-            $data["id_pregunta"] = $data["pregunta"]["id"];
-            $data["id_partida"] = $this->insertPartida($idUsuario);
+            // Si empieza
+            $pregunta = $this->getPreguntaRandom($idUsuario);
+            if ($pregunta == null) {
+                $data["error"] = "No hay preguntas disponibles";
+                return $data;
+            } else {
+                $data["pregunta"] = $pregunta;
+                $data["id_pregunta"] = $pregunta["id"];
+                $data["id_partida"] = $this->insertPartida($idUsuario);
+                unset($pregunta);
+            }
         }
 
+        $this->verVariable($data);
         $data["respuestas"] = $this->obtenerRespuestasDePregunta($data["pregunta"]["id"]);
         shuffle($data["respuestas"]); // delegar despues
         return $data;
@@ -102,9 +129,15 @@ class JuegoModel
 
     private function getPreguntaRandom($idUsuario)
     {
-        $preguntasDB = $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
-        $indicePreguntaRandom = array_rand($preguntasDB);
-        return $preguntasDB[$indicePreguntaRandom];
+        // Obtener preguntas no respondidas en el nivel del jugador
+        $result = $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
+        if (empty($result)) {
+            return null;
+        } else {
+            $indicePreguntaRandom = array_rand($result);
+            return $result[$indicePreguntaRandom];
+        }
+
     }
 
     private function obtenerNivelDePregunta($idPregunta)
@@ -161,7 +194,8 @@ class JuegoModel
         $result = $this->updatePregunta(
             $data["preguntaTexto"],
             $data["idCategoria"],
-            $data["idPregunta"]
+            $data["idPregunta"],
+            $data["idEstado"]
         );
 
         if ($result) {
@@ -210,7 +244,7 @@ class JuegoModel
             unset($r);
 
             foreach ($respuestas as $r) {
-                $ok = $this->insertRespuestasDePregunta(
+                $ok = $this->insertRespuestaDePregunta(
                     $r["texto"], $idPregunta, $r["esCorrecta"]);
                 if ($ok) {
                     $contadorInsertsCorrectos++;
@@ -287,6 +321,21 @@ class JuegoModel
         return $result["success"];
     }
 
+    public function obtenerEstadosMenosElDePregunta($idPregunta)
+    {
+        $q = "SELECT e.* FROM estado e
+              JOIN pregunta p ON p.id_estado != e.id
+              WHERE p.id = :idPregunta";
+        $params = [
+            ["columna" => "idPregunta", "valor" => (int)$idPregunta]
+        ];
+        $result = $this->database->query($q, 'MULTIPLE', $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
     public function getReportesDePreguntaConId($idPregunta)
     {
         $q = "SELECT r.* ,
@@ -339,7 +388,7 @@ class JuegoModel
               c.color AS color
               FROM pregunta p
               JOIN estado e ON p.id_estado = e.id
-              JOIN categoria c ON c.id = p.id_categoria;";
+              JOIN categoria c ON c.id = p.id_categoria";
         $result = $this->database->query($q, "MULTIPLE", []);
         if ($result["success"]) {
             return $result["data"];
@@ -487,9 +536,15 @@ class JuegoModel
     {
         $q = "SELECT 
               p.texto as pregunta_str, 
-              p.id, p.id_categoria, p.id_estado, c.descripcion as categoria
+              p.id, 
+              p.id_categoria, 
+              p.id_estado, 
+              c.descripcion as categoria,
+              e.id as id_estado,
+              e.descripcion as estado
               FROM pregunta p 
               JOIN categoria c on p.id_categoria = c.id
+              JOIN estado e on p.id_estado = e.id
               WHERE p.id = :id";
         $params = [
             ["columna" => "id", "valor" => $id]
@@ -531,20 +586,17 @@ class JuegoModel
 
     private function obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario)
     {
-        $result = $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
+        $preguntasDelNivelDelUsuario = $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
+
         // hay preguntas de su nivel que todavía no respondió
-        if ($result["success"] && !empty($result["data"])) {
-            return $result["data"];
-        } elseif ($result["success"]) {
-            if ($this->hayMasPreguntasParaUsuarioPorNivel($idUsuario)) {
-                // hay preguntas de su nivel pero ya las respondió
-                $this->resetearPreguntasRespondidasPorUsuario($idUsuario);
-                return $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
-            }
-            // no hay mas preguntas de su nivel, hay que darle preguntas no respondidas
-            $result = $this->obtenerPreguntasNoRespondidasDelUsuario($idUsuario);
+        if (!empty($preguntasDelNivelDelUsuario["data"])) {
+            return $preguntasDelNivelDelUsuario["data"];
+        } else {
+            $result = $this->resetearPreguntasRespondidasPorUsuario($idUsuario);
+            if ($result) {
+                return $this->buscarPreguntasParaUsuarioPorNivel($idUsuario);
+            } else return false;
         }
-        return $result["data"];
     }
 
     private function obtenerPreguntasNoRespondidasDelUsuario($idUsuario)
@@ -557,6 +609,8 @@ class JuegoModel
               FROM pregunta p 
               LEFT JOIN usuario_pregunta up 
                   ON p.id = up.pregunta_id AND up.usuario_id = :id
+              JOIN estado e
+                  ON p.id_estado = e.id AND e.id = 2
               WHERE up.pregunta_id IS NULL
               ORDER BY RAND()";
         $params = [
@@ -745,6 +799,7 @@ class JuegoModel
     private function buscarPreguntasParaUsuarioPorNivel($idUsuario)
     {
         $nivelUsuario = $this->obtenerNivelDeUsuario($idUsuario);
+
         switch ($nivelUsuario) {
             case $nivelUsuario === 'ALTO':
                 $minimo = 0;
@@ -759,10 +814,13 @@ class JuegoModel
                 $maximo = 1;
         }
 
+
         $q = "SELECT p.id as id, p.texto as pregunta_str
               FROM pregunta p 
               LEFT JOIN usuario_pregunta up 
                   ON p.id = up.pregunta_id AND up.usuario_id = :id
+              JOIN estado e
+                  ON p.id_estado = e.id AND e.id = 2
               WHERE up.pregunta_id IS NULL
               AND p.cantidad_respondidas >= 5
               AND p.cantidad_acertadas/p.cantidad_respondidas BETWEEN :minimo AND :maximo
@@ -774,7 +832,10 @@ class JuegoModel
             ["columna" => "maximo", "valor" => $maximo]
         ];
 
-        return $this->database->query($q, 'MULTIPLE', $params);
+        $result = $this->database->query($q, 'MULTIPLE', $params);
+        if ($result["success"]) {
+            return $result["data"];
+        } else return $result["success"];
     }
 
     private function buscarPreguntasParaUsuario($idUsuario)
@@ -841,18 +902,19 @@ class JuegoModel
 
     /** Resetea todas las preguntas que respondió
      * @param $idUsuario
-     * @return void
+     * @return array
      */
-    private function resetearPreguntasRespondidasPorUsuario($idUsuario): void
+    private function resetearPreguntasRespondidasPorUsuario($idUsuario): bool
     {
         $q = "DELETE FROM usuario_pregunta
               WHERE usuario_id = :id";
-
+        echo "reseteo de preguntas respondidas";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
         ];
 
-        $this->database->query($q, 'DELETE', $params);
+        $result = $this->database->query($q, 'DELETE', $params);
+        return $result["success"];
     }
 
     /** Actualizar pregunta (texto, categoria, FALTA ESTADO)
@@ -861,17 +923,18 @@ class JuegoModel
      * @param int $idPregunta
      * @return mixed
      */
-    private function updatePregunta(string $texto, int $idCategoria, int $idPregunta): mixed
+    private function updatePregunta(string $texto, int $idCategoria, int $idPregunta, int $idEstado): mixed
     {
         $q = "UPDATE pregunta 
               SET texto = :texto,
                   id_categoria = :categoria,
-                  id_estado = 2
+                  id_estado = :estado
              WHERE id = :id";
         $params = [
             ["columna" => "texto", "valor" => $texto],
             ["columna" => "categoria", "valor" => $idCategoria],
             ["columna" => "id", "valor" => $idPregunta],
+            ["columna" => "estado", "valor" => $idEstado],
         ];
         $result = $this->database->query($q, "UPDATE", $params);
         return $result["success"];

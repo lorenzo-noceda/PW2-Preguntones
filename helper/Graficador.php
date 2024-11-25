@@ -21,6 +21,21 @@ class Graficador
         $this->grafico->SetBox();
     }
 
+    public function crearGraficoDeBarras($ancho = 350, $alto = 200, array $datosY, string $titulo, string $leyenda) {
+        $this->grafico = new Graph($ancho, $alto);
+        $barras = new BarPlot($datos);
+        $this->grafico->Add($barras);
+        $this->grafico->xaxis->SetTickLabels(["XD", "XD"]);
+        $this->grafico->title->Set($titulo);
+    }
+
+    public function asignarCategoriasX (array $categorias) {
+        $this->verVariable($categorias);
+        $this->grafico->xaxis->SetTickLabels($categorias);
+    }
+
+
+
     public function asignarDatosGraficoDeTorta($arrayDatos) {
         $torta = new PiePlot($arrayDatos);
         $this->grafico->Add($torta);
@@ -71,6 +86,11 @@ class Graficador
         $rutaGrafico = 'public/img/' . uniqid('grafico_', true) . '.png';
         $this->grafico->Stroke($rutaGrafico);
         return $rutaGrafico;
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
 
 
