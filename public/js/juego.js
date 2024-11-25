@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tiempoRestante--;
 
             if (tiempoRestante > 0) {
-                reloj.textContent = tiempoRestante;
+                reloj.textContent = `Te quedan ${tiempoRestante} segundos.`;
             } else {
                 clearInterval(temporizador);
                 manejarTiempoAgotado();

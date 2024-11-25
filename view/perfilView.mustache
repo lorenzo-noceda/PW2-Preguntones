@@ -13,7 +13,7 @@
     <link href="/PW2-Preguntones/public/css/perfil.css" rel="stylesheet">
     <title>Document</title>
 </head>
-<body>
+<body class="text-white">
 {{#usuario}}
     <header class="col-12 bg-primary text-white styledHeader">
         <nav class="col-10 col-md-5 col-xl-4 d-flex justify-content-between mx-auto align-items-center">
@@ -35,74 +35,60 @@
         </nav>
     </header>
     <main class="col-12 col-sm-8 col-md-7 col-lg-5 col-xl-4
-                 mx-auto py-4 text-white d-flex flex-column gap-4">
+                 mx-auto text-white d-flex flex-column gap-4 p-4">
         <!-- TARJETA USUARIO   -->
-        <div class="col-12 p-4 bg-primary d-flex flex-column gap-4">
-            <!-- (IMAGEN USUARIO + UBICACIÓN) + PUNTAJES - ROW   -->
+        <div class="col-12 d-flex flex-column gap-4">
             <div class="col-12 d-flex flex-wrap justify-content-between">
-                <!-- (IMAGEN USUARIO + UBICACIÓN - COL -->
-                <div class="d-flex flex-column gap-2 col-6">
+                <!-- INFORMACIÓN DEL USUARIO (UBICACIÓN, RAKING, PUNTAJE, MUSICA) -->
+                <div class="d-flex flex-column gap-2 col-7">
+                    <!-- IMG USUARIO + USERNAME -->
                     <div class="d-flex gap-2 flex-wrap align-items-center">
                         <div class="userImageContainer">
                             <img src="/PW2-Preguntones/public/images/user.png" alt="Imagen de Usuario"/>
                         </div>
                         <p class="m-0 p-0 fw-semibold fs-5">{{username}}</p>
                     </div>
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <!-- IMG UBICACION + PAIS, CIUDAD -->
+                    <div class="d-flex gap-1 flex-wrap align-items-center">
                         <div class="userUbicationContainer">
                             <img src="/PW2-Preguntones/public/images/location.png" alt="Ubicacion Logo"/>
                         </div>
-                        <div id="mapPerfil" style="width: 100%; height: 200px;"></div>
-
-                        <script>
-                            function initMapPerfil() {
-                                const userPosition = { lat: {{usuario.latitud}}, lng: {{usuario.longitud}} };
-                                const map = new google.maps.Map(document.getElementById("mapPerfil"), {
-                                    center: userPosition,
-                                    zoom: 10,
-                                });
-                                new google.maps.Marker({
-                                    position: userPosition,
-                                    map,
-                                });
-                            }
-                        </script>
-                        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc&callback=initMapPerfil" async defer></script>
+                        <p class="m-0">{{pais}}, {{ciudad}}.</p>
                     </div>
-                </div>
-                <!--   PUNTAJE + PUESTO -->
-                <div class="col-6 d-flex flex-column gap-2 align-items-center lineaSeparadora">
-                    <p class="m-0 p-0">
-                        <strong>
-                            Puesto mundial:
-                        </strong>
-                         #null</p>
-                    <p class="m-0 p-0">
-                        <strong>
-                            Puntaje:
-                        </strong>
-                        {{puntajeAcumulado}}</p>
-
-                    <p> musica en el juego</p>
-                        <form method="POST" class="botones" action="/PW2-Preguntones/perfil/musica?id={{usuario.id}}">
-                            <!--<label>activar<input  onchange="this.form.submit()" type="radio" value="true" name="musica" id="musicaSi" {{#usuario.musica}}checked{{/usuario.musica}}></label>
-                            <label>desactivar<input onchange="this.form.submit()" type="radio" value="false" name="musica" id="musicaNo"  {{^usuario.musica}}checked{{/usuario.musica}} ></label>-->
-                    <div class="radio-container">
-                        <input type="radio" name="musica" value="true" id="musicaSi" onchange="this.form.submit()" {{#usuario.musica}}checked{{/usuario.musica}}>
-                        <label for="musicaSi">Activada</label>
-
-                        <input type="radio" name="musica" value="false" id="musicaNo" onchange="this.form.submit()" {{^usuario.musica}}checked{{/usuario.musica}}>
-                        <label for="musicaNo">Desactivada</label>
+                    <!--   PUNTAJE + PUESTO -->
+                    <div class="d-flex flex-column gap-2">
+                        <p class="m-0 p-0"><strong>Puesto mundial: </strong>#null</p>
+                        <p class="m-0 p-0"><strong>Puntaje: </strong>{{puntajeAcumulado}}</p>
                     </div>
+                    <!--  CONFIG MUSICA -->
+                    <div class="d-flex flex-column gap-2">
+                        <p class="m-0">Musica en el juego</p>
+                        <form method="POST"
+                              class="botones"
+                              action="/PW2-Preguntones/perfil/musica?id={{usuario.id}}">
+                        <div class="radio-container">
+                            <input type="radio" name="musica" value="true" id="musicaSi" onchange="this.form.submit()"
+                                   {{#usuario.musica}}checked{{/usuario.musica}}>
+                            <label for="musicaSi">Activada</label>
+
+                            <input type="radio" name="musica" value="false" id="musicaNo" onchange="this.form.submit()"
+                                   {{^usuario.musica}}checked{{/usuario.musica}}>
+                            <label for="musicaNo">Desactivada</label>
+                        </div>
                         </form>
+                    </div>
+                </div>
+                <!-- QR-->
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="qrImageContainer bg-primary-subtle">
+                        {{{qr}}}
+                    </div>
                 </div>
             </div>
-            <!--   QR-->
-            <div class="d-flex align-items-center justify-content-center">
-                <div class="qrImageContainer bg-primary-subtle">
-                    {{{qr}}}
-                </div>
-            </div>
+            <div id="mapPerfil" style="width: 100%; height: 200px;"></div>
+            <!-- Inputs ocultos para latitud y longitud -->
+            <input type="hidden" id="latitudUsuario" value="{{usuario.latitud}}">
+            <input type="hidden" id="longitudUsuario" value="{{usuario.longitud}}">
             <a class="mx-auto" href="/PW2-Preguntones/perfil/editar?id={{id}}">
             <button class="btn btn-warning">Editar perfil</button>
             </a>
@@ -135,6 +121,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
+    <script src="/PW2-Preguntones/public/js/perfil.js"></script>
 {{/usuario}}
 </body>
 </html>

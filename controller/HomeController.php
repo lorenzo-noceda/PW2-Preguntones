@@ -69,7 +69,10 @@ class HomeController
             $respuestas = $this->obtenerRespuestasFormulario();
             $result = $this->juegoModel->crearSugerencia($pregunta, $categoria, $respuestas);
             if ($result) {
-                $this->presenter->show("mensajeSugerenciaRealizada");
+                $data["mensaje"] = "Sugerencia realizada correctamente";
+                $data["url"] = "home";
+                $data["boton"] = "Volver al inicio";
+                $this->presenter->show("mensajeProcesoCorrecto", $data);
             } else {
                 $data["error"] = "Ups! ocurrió un error. Inténtalo de nuevo más tarde";
                 $this->presenter->show("error", $data);
@@ -121,5 +124,10 @@ class HomeController
     {
         header("Location: /PW2-preguntones/$ruta");
         exit();
+    }
+
+    private function verVariable($data): void
+    {
+        echo '<pre class="text-white">' . print_r($data, true) . '</pre>';
     }
 }

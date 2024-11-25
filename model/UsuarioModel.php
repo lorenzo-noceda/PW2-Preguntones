@@ -451,7 +451,55 @@ SELECT u.*,
         return $result["success"];
     }
 
-    public function actualizarUsuario($idUsuario, $data){
+    public function obtenerCantidadDeUsuariosPorTiempo()
+    {
+        $q = "SELECT 
+                CASE 
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 DAY THEN 'Último Día'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 7 DAY THEN 'Última Semana'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 MONTH THEN 'Último Mes'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 YEAR THEN 'Último Año'
+                    ELSE 'Todos los Tiempos'
+                END AS periodo,
+                COUNT(*) AS cantidad_usuarios
+            FROM usuario
+            GROUP BY periodo
+            ORDER BY FIELD(periodo, 'Último Día', 'Última Semana', 'Último Mes', 'Último Año', 'Todos los Tiempos')";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    public function obtenerUsuariosPorEdad($tiempo)
+    {
+        $q = "SELECT 
+                    CASE
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) BETWEEN 0 AND 17 THEN 'menor'
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) BETWEEN 18 AND 59 THEN 'medio'
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) > 60 THEN 'jubilado'
+                    END AS grupo_etario,
+                    COUNT(*) AS cantidad
+                FROM usuario
+                WHERE fecha_registro >= CURDATE() - INTERVAL :dias DAY
+                GROUP BY grupo_etario";
+        $params = [
+            ["columna" => "dias", "valor" => $tiempo]
+        ];
+        $result = $this->database->query($q, "MULTIPLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    private function obtenerUsuariosPorRangoEtario()
+    {
+
+    }
+
+   public function actualizarUsuario($idUsuario, $data){
 
         foreach ($data as $clave => $valor) {
             $q = "UPDATE usuario SET $clave = :$clave WHERE id = :id";
@@ -459,6 +507,7 @@ SELECT u.*,
                 ["columna" => $clave, "valor" => $valor],
                 ["columna" => "id" , "valor" => $idUsuario]
             ];
+            var_dump($params);
             $this->database->query($q, 'UPDATE', $params);
         }
     }
