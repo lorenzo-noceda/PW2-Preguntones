@@ -87,7 +87,7 @@ class RegistroController
     public function validarCorreo()
     {
         $data = [
-            "correoParaValidar" => $_SESSION["correoParaValidar"] ?? "nada crack.",
+            "correoParaValidar" => $_SESSION["correoParaValidar"] ?? "",
             "id_usuario" => $_SESSION["id_usuario"],
             "mensaje" => "Revisa tu correo electrónico y valída el mismo."
         ];

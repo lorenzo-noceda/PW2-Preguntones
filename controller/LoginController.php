@@ -1,9 +1,7 @@
 <?php
 
 use JetBrains\PhpStorm\NoReturn;
-class LoginController
-{
-
+class LoginController {
     private $usuarioModelo;
     private $presenter;
 
@@ -51,7 +49,7 @@ class LoginController
                 } elseif (!is_null($usuario['jugador_id'])) {
                     $rol = 'jugador';
                 } else {
-                    $rol = 'sin_rol'; // Maneja el caso de usuarios sin rol asignado, si aplica
+                    $rol = null;
                 }
 
                 // Guardamos el usuario en sesion

@@ -451,6 +451,19 @@ SELECT u.*,
         return $result["success"];
     }
 
+    public function actualizarUsuario($idUsuario, $campos){
+        foreach ($campos as $clave => $valor) {
+            $q = "UPDATE usuario SET $clave = :valor WHERE id = :id";
+            var_dump($q);
+            $params = [
+                ["columna" => $clave, "valor" => $valor],
+                ["columna" => "id" , "valor" => $idUsuario]
+            ];
+            var_dump($params);
+            $this->database->query($q, 'UPDATE', $params);
+        }
+    }
+
     public function actualizarMusica($idUsuario, $activarMusica){
 
         $q = "UPDATE usuario

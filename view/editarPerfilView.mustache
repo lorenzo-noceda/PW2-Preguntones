@@ -9,8 +9,6 @@
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!--  CSS GENERAL   -->
     <link href="/PW2-Preguntones/public/css/main.css" rel="stylesheet">
-    <!--  CSS PERFIL   -->
-    <link href="/PW2-Preguntones/public/css/editarPerfil.css" rel="stylesheet">
     <title>Editar perfil</title>
 </head>
 <body>
@@ -31,7 +29,7 @@
         </div>
     </nav>
 </header>
-<main class="form-container col-12 d-flex flex-column align-items-center">
+<main class="form-container col-12 d-flex flex-column align-items-center text-white">
     {{#usuario}}
         <form action="/PW2-Preguntones/perfil/actualizar"
               method="POST"
@@ -88,27 +86,7 @@
                            required>
                 </div>
             </div>
-            <!--   PAIS Y CIUDAD     -->
-            <div class="row">
-                <div class="form-group col">
-                    <label for="location">País y ciudad</label>
-                    <select id="pais" name="pais" class="form-select">
-                        {{#pais}}
-                            <option value="{{pais}}" selected>{{pais}}</option>
-                        {{/pais}}
-                        {{#paises}}
-                            <option value="{{id}}">{{nombre}}</option>
-                        {{/paises}}
-                    </select>
-                </div>
-                <div class="form-group col">
-                    <label for="location">Ciudad</label>
-                    <select id="ciudad" name="id_ciudad" class="form-select bg-dark-subtle">
-                        <!--                        <option value="">Selecciona una ciudad</option>-->
-                        <option value="">En desarrollo...</option>
-                    </select>
-                </div>
-            </div>
+
             <!--  SEXO   -->
             <div class="col-12">
                 <label for="sexo" class="form-label">Sexo</label>
@@ -120,23 +98,6 @@
                 </select>
             </div>
             <input type="hidden" value="{{password}}"/>
-            <!--   CONTRASEÑAS   -->
-            <!--            <div class="form-group">-->
-            <!--                <label for="password" class="form-label">Contraseña</label>-->
-            <!--                <input class="form-control"-->
-            <!--                       type="password"-->
-            <!--                       id="password"-->
-            <!--                       name="password"-->
-            <!--                       required>-->
-            <!--            </div>-->
-            <!--            <div class="form-group">-->
-            <!--                <label for="confirmPassword" class="form-label">Repetir contraseña</label>-->
-            <!--                <input class="form-control"-->
-            <!--                       type="password"-->
-            <!--                       id="confirmPassword"-->
-            <!--                       name="confirmPassword"-->
-            <!--                       required>-->
-            <!--            </div>-->
             {{#error}}
                 <p class="text-danger m-0 p-0">{{error}}</p>
             {{/error}}

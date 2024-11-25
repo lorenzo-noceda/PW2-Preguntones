@@ -5,7 +5,7 @@ class AdminController
 {
 
     private JuegoModel $juegoModel;
-    private UsuarioModel $usuarioModel;
+    private $usuarioModel;
     private MustachePresenter $presenter;
     private GraficosModel $graficosModel;
 
