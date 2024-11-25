@@ -23,7 +23,7 @@ class Graficador
 
     public function crearGraficoDeBarras($ancho = 350, $alto = 200, array $datosY, string $titulo, string $leyenda) {
         $this->grafico = new Graph($ancho, $alto);
-        $barras = new BarPlot($datos);
+        $barras = new BarPlot($datosY);
         $this->grafico->Add($barras);
         $this->grafico->xaxis->SetTickLabels(["XD", "XD"]);
         $this->grafico->title->Set($titulo);
