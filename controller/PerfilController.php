@@ -35,6 +35,7 @@ class PerfilController
         $id = $_GET["id"] ?? null;
         $data["usuario"] = $this->usuarioModel->getUsuarioPorId($id);
         $data["sexo"] = $this->usuarioModel->getSexosMenosElDelUsuario($data["usuario"]["sexoNombre"]);
+        $data["id_usuario"] = $id;
         $this->presenter->show("editarPerfil", $data);
     }
 
@@ -44,11 +45,11 @@ class PerfilController
         $data = [
             'nombre' => $_POST['nombre'],
             'apellido' => $_POST['apellido'],
-            'anio_nacimiento' => $_POST['anio_nacimiento'],
-            'id_sexo' => $_POST['id_sexo'],
+            'id_sexo' => $_POST['id_sexo']
         ];
         $this->usuarioModel->actualizarUsuario($id, $data);
-        $this->presenter->show("perfilEditado");
+        $data["id_usuario"] = $id;
+        $this->presenter->show("perfilEditado", $data);
     }
 
     private function validarUsuario(): void

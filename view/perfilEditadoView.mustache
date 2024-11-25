@@ -23,11 +23,9 @@
     <div class="d-flex flex-column gap-3 align-items-center">
         <h3 class="m-0">Perfil editado</h3>
         <p class="m-0 fw-semibold fs-5">El perfil fue editado correctamente</p>
-        <form method="post"
-              enctype="multipart/form-data"
-              action="/PW2-Preguntones/home">
-            <button class="btn btn-primary mx-auto">Volver al inicio</button>
-        </form>
+
+        <a href="/PW2-Preguntones/perfil/editar?id={{id_usuario}}"><button class="btn btn-secondary mx-auto">Volver a editar perfil</button></a>
+        <a href="/PW2-Preguntones/home"><button class="btn btn-primary mx-auto">Volver al inicio</button></a>
     </div>
 </main>
 </body>
