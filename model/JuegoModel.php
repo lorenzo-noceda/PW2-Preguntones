@@ -877,8 +877,6 @@ class JuegoModel
      */
     private function resetearPreguntasRespondidasPorUsuario($idUsuario): bool
     {
-        $this->verVariable("Reseteo las que respondió.");
-
         $q = "DELETE FROM usuario_pregunta
               WHERE usuario_id = :id";
         $params = [

@@ -38,7 +38,7 @@ class JuegoController
         $_SESSION["id_partida"] = $data["id_partida"] ?? $_SESSION["id_partida"];
         // Guardar para verla como resultado (malo/bueno)
         $_SESSION["pregunta"] = $data["pregunta"];
-        
+
         $musica = $_SESSION['musica'];
         $tiempoLimite = 20 + $_SESSION["tiempo_inicio"] - time();
 
