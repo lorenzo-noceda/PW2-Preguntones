@@ -24,11 +24,6 @@ class UsuarioModel
             $usuarioBuscado["partidas"] = $this->getPartidasDelUsuario($idUsuario);
             $usuarioBuscado["puntajeAcumulado"] = $this->getPuntajeAcumuladoDeUnUsuario($idUsuario)["puntaje_acumulado"];
         }
-
-        $paisAndCiudad = $this->obtenerPaisCiudad($usuarioBuscado["latitud"], $usuarioBuscado["longitud"]);
-
-        $usuarioBuscado["pais"] = $paisAndCiudad["pais"];
-        $usuarioBuscado["ciudad"] = $paisAndCiudad["ciudad"];
         return $usuarioBuscado;
     }
 
@@ -139,6 +134,21 @@ class UsuarioModel
     }
 
 
+    public function enviarMailValidacion($emailUsuario, $nombreUsuario)
+    {
+        $this->mailPresenter->setRecipient($emailUsuario, $nombreUsuario);
+        $this->mailPresenter->setSubject('Confirmación de registro');
+        $this->mailPresenter->setBody("<h1>Usuario registrado!</h1><br><a href='http://localhost/PW2-preguntones/registro/validarCorreo'>Cliquea aquí para validar tu correo</a>");
+
+        try {
+            if ($this->mailPresenter->sendEmail()) {
+                echo 'El correo ha sido enviado';
+            }
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
     public function getVerificacionDeUsuario($idusuario)
     {
         if ($idusuario != null) {
@@ -174,8 +184,9 @@ class UsuarioModel
         return $this->database->getUltimoIdGenerado();
     }
 
-    public function getRanking()
-    {
+    // Consultas a la base de datos
+
+    public function getRanking () {
         $q = "SELECT 
                     u.username, 
                     u.id AS usuario_id,
@@ -340,20 +351,20 @@ class UsuarioModel
 
     public function getUsuarioPorUsername($username)
     {
-        $query = 'SELECT u.*, 
-                       j.id AS jugador_id, 
-                       e.id AS editor_id, 
-                       a.id AS administrador_id 
-                  FROM usuario u
-                  LEFT JOIN jugador j ON u.id = j.id
-                  LEFT JOIN editor e ON u.id = e.id
-                  LEFT JOIN administrador a ON u.id = a.id
-                  WHERE u.username = :username';
+        $query = '
+SELECT u.*, 
+       j.id AS jugador_id, 
+       e.id AS editor_id, 
+       a.id AS administrador_id 
+    FROM usuario u
+    LEFT JOIN jugador j ON u.id = j.id
+    LEFT JOIN editor e ON u.id = e.id
+    LEFT JOIN administrador a ON u.id = a.id
+    WHERE u.username = :username';
 
         $params = [
             ["columna" => "username", "valor" => $username],
         ];
-
         $result = $this->database->query($query, "SINGLE", $params);
         if ($result["success"]) {
             return $result["data"];
@@ -412,9 +423,8 @@ class UsuarioModel
         return $this->getUsuarioPorCorreo($correo) != null;
     }
 
-    public function subirRespuesta($respuesta)
-    {
-        $queryRespuesta = "
+    public function subirRespuesta($respuesta){
+        $queryRespuesta="
         INSERT INTO respuesta(texto,id_pregunta, esCorrecta)
         values(:texto, :id_pregunta, :esCorrecta)";
 
@@ -426,7 +436,7 @@ class UsuarioModel
         return $this->database->query($queryRespuesta, 'INSERT', $params);
     }
 
-    public function guardarSugerencia($texto, $id_categoria, $respuestas): bool
+    public function guardarSugerencia($texto, $id_categoria,$respuestas): bool
     {
         $query = "
         INSERT INTO pregunta(texto, id_categoria, id_estado)
@@ -440,14 +450,14 @@ class UsuarioModel
 
         $ultimoId = $this->database->getUltimoIdGenerado();
 
-        $queryRespuesta = "
+        $queryRespuesta="
         INSERT INTO respuesta(respuestas,ultimoId, esCorrecta)
         values(:respuestas, :ultimoId, :esCorrecta)";
 
-        $respuesta1 = ["texto" => $respuestas["incorrecta1"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
-        $respuesta2 = ["texto" => $respuestas["incorrecta2"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
-        $respuesta3 = ["texto" => $respuestas["incorrecta3"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
-        $respuesta4 = ["texto" => $respuestas["correcta"], "id_pregunta" => $ultimoId, "esCorrecta" => 1];
+        $respuesta1=["texto"=>$respuestas["incorrecta1"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta2=["texto"=>$respuestas["incorrecta2"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta3=["texto"=>$respuestas["incorrecta3"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
+        $respuesta4=["texto"=>$respuestas["correcta"], "id_pregunta"=>$ultimoId, "esCorrecta"=>1];
 
         $this->subirRespuesta($respuesta1);
         $this->subirRespuesta($respuesta2);
@@ -469,8 +479,7 @@ class UsuarioModel
     }
 
 
-    public function esEditor($idUsuario)
-    {
+    public function esEditor($idUsuario) {
         $query = "SELECT COUNT(*) AS total FROM editor WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
@@ -481,8 +490,7 @@ class UsuarioModel
     }
 
 
-    public function esJugador($idUsuario)
-    {
+    public function esJugador($idUsuario) {
         $query = "SELECT COUNT(*) AS total FROM jugador WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
@@ -506,17 +514,11 @@ class UsuarioModel
         return $this->database->query($query, 'UPDATE', $params);
     }
 
-    public function obtenerUsuariosPorSexo($dias = 360)
-    {
+    public function obtenerUsuariosPorSexo () {
         $q = "SELECT COUNT(s.nombre) as cantidad, s.nombre
               FROM USUARIO u JOIN sexo s ON u.id_sexo = s.id
-              WHERE u.fecha_registro >= CURDATE() - INTERVAL :dias DAY
-              GROUP BY s.nombre
-              ORDER BY s.nombre ASC";
-        $params = [
-            ["columna" => "dias", "valor" => $dias]
-        ];
-        $result = $this->database->query($q, "MULTIPLE", $params);
+              GROUP BY s.nombre";
+        $result = $this->database->query($q, "MULTIPLE");
         if ($result["success"]) {
             return $result["data"];
         }
@@ -591,10 +593,10 @@ class UsuarioModel
 
     }
 
-   public function actualizarUsuario($idUsuario, $campos){
-        foreach ($campos as $clave => $valor) {
-            $q = "UPDATE usuario SET $clave = :valor WHERE id = :id";
-            var_dump($q);
+   public function actualizarUsuario($idUsuario, $data){
+
+        foreach ($data as $clave => $valor) {
+            $q = "UPDATE usuario SET $clave = :$clave WHERE id = :id";
             $params = [
                 ["columna" => $clave, "valor" => $valor],
                 ["columna" => "id" , "valor" => $idUsuario]
@@ -605,12 +607,13 @@ class UsuarioModel
     }
 
     public function actualizarMusica($idUsuario, $activarMusica){
+
         $q = "UPDATE usuario
               SET musica = :musica 
               WHERE id = :id";
         $params = [
             ["columna" => "musica", "valor" => $activarMusica],
-            ["columna" => "id", "valor" => $idUsuario]
+             ["columna" => "id" , "valor" => $idUsuario]
         ];
         return $this->database->query($q, 'UPDATE', $params);
     }
