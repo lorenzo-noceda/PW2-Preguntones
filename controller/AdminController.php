@@ -55,16 +55,16 @@ class AdminController
     public function usuariosPorAtributo()
     {
         $tiempo = $_GET["time"] ?? 360;
-        try {
-            $result = $this->getGraficos($tiempo);
-            $data["userPorSexo"] = $result["userPorSexo"];
-            $data["userPorPais"] = $result["userPorPais"];
-            $data["userPorEdad"] = $result["userPorEdad"];
-            $data["texto"] = $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
-            $this->presenter->show("adminGraficosUsuariosPorPaisSexoEdad", $data);
-        } catch (Exception $ex) {
-            $data["error"] = "¡Ups! No se pudo cargar los graficos.";
-            $this->presenter->show("error", $data);
+       try {
+                $result = $this->getGraficosPorAtributo($tiempo);
+                $data["userPorSexo"] = $result["userPorSexo"];
+                $data["userPorPais"] = $result["userPorPais"];
+                $data["userPorEdad"] = $result["userPorEdad"];
+                $data["texto"] = $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
+                $this->presenter->show("adminGraficosUsuariosPorPaisSexoEdad", $data);
+            } catch (Exception $ex) {
+                $data["error"] = "¡Ups! No se pudo cargar los graficos.";
+                $this->presenter->show("error", $data);
         }
 
     }
@@ -72,63 +72,18 @@ class AdminController
     public function general()
     {
         $this->graficosModel->reset();
-        $tiempo = $_GET["time"] ?? 9999;
-
-        $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
-        $graficoUsuarios = $this->graficosModel->generarGraficoDeBarras(
-            "Usuarios",
-            "Tiempo",
-            "Registrados",
-            array_column($datosBD, "cantidad_usuarios"),
-            array_column($datosBD, "periodo"),
-        );
-
-        $datosBD = $this->usuarioModel->obtenerCantidadDePartidasPorTiempo();
-        $graficoPartidas = $this->graficosModel->generarGraficoDeBarras(
-            "Partidas",
-            "Tiempo",
-            "Jugadas",
-            array_column($datosBD, "cantidad_partidas"),
-            array_column($datosBD, "periodo"),
-        );
-
-        $datosBD = $this->usuarioModel->obtenerCantidadDePreguntasHabilitadasYNoHabilitadas();
-        $graficoPreguntas = $this->graficosModel->generarGraficoDeTorta(
-            "Preguntas del juego",
-            array_column($datosBD, "cantidad"),
-            ["green", "gray", "orange", "red", "blue"],
-            array_column($datosBD, "estado"),
-            true
-        );
-
-        $datosBD = $this->usuarioModel->obtenerUsuariosNuevosYViejos();
-        $usuariosNuevos = $this->graficosModel->generarGraficoDeTorta(
-            "Usuarios nuevos (7 días)",
-            array_column($datosBD, "cantidad"),
-            ["blue", "red"],
-            array_column($datosBD, "categoria"),
-            true
-        );
-
-        $datosBD = $this->usuarioModel->obtenerAciertosYErroresDeUsuarios();
-        $usuariosAciertos = $this->graficosModel->generarGraficoDeTorta(
-            "Aciertos y errores",
-            array_column($datosBD, "cantidad"),
-            ["blue", "red"],
-            array_column($datosBD, "nombre"),
-            true
-        );
-
-
-        $data = [
-            "usuarios" => $graficoUsuarios,
-            "partidas" => $graficoPartidas,
-            "preguntas" => $graficoPreguntas,
-            "usuariosNuevos" => $usuariosNuevos,
-            "usuariosAciertos" => $usuariosAciertos,
-            "texto" => $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
-        ];
-        $this->presenter->show("adminGraficosGeneral", $data);
+        try {
+            $result = $this->getGraficosGenerales();
+            $data["usuariosPorTiempo"] = $result["usuariosPorTiempo"];
+            $data["partidasPorTiempo"] = $result["partidasPorTiempo"];
+            $data["preguntasEstado"] = $result["preguntasEstado"];
+            $data["usuariosNuevos"] = $result["usuariosNuevos"];
+            $data["usuariosAciertos"] = $result["usuariosAciertos"];
+            $this->presenter->show("adminGraficosGeneral", $data);
+        } catch (Exception $ex) {
+            $data["error"] = "¡Ups! No se pudo cargar los graficos.";
+            $this->presenter->show("error", $data);
+        }
     }
 
     private function obtenerPorcentajeAciertos($usuario)
@@ -442,7 +397,7 @@ class AdminController
     /**
      * @throws Exception
      */
-    private function getGraficos($tiempo): array
+    private function getGraficosPorAtributo($tiempo): array
     {
         $this->graficosModel->reset();
         $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo($tiempo);
@@ -478,6 +433,60 @@ class AdminController
         );
         $data["userPorPais"] = $graficoUsuariosPorEdad;
         return $data;
+    }
+
+    public function getGraficosGenerales () {
+        $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
+        $graficoUsuarios = $this->graficosModel->generarGraficoDeBarras(
+            "Usuarios",
+            "Tiempo",
+            "Registrados",
+            array_column($datosBD, "cantidad_usuarios"),
+            array_column($datosBD, "periodo"),
+        );
+        $data["usuariosPorTiempo"] = $graficoUsuarios;
+
+        $datosBD = $this->usuarioModel->obtenerCantidadDePartidasPorTiempo();
+        $graficoPartidas = $this->graficosModel->generarGraficoDeBarras(
+            "Partidas",
+            "Tiempo",
+            "Jugadas",
+            array_column($datosBD, "cantidad_partidas"),
+            array_column($datosBD, "periodo"),
+        );
+        $data["partidasPorTiempo"] = $graficoPartidas;
+
+        $datosBD = $this->usuarioModel->obtenerCantidadDePreguntasHabilitadasYNoHabilitadas();
+        $graficoPreguntas = $this->graficosModel->generarGraficoDeTorta(
+            "Preguntas del juego",
+            array_column($datosBD, "cantidad"),
+            ["green", "gray", "orange", "red", "blue"],
+            array_column($datosBD, "estado"),
+            true
+        );
+        $data["preguntasEstado"] = $graficoPreguntas;
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosNuevosYViejos();
+        $usuariosNuevos = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios nuevos (7 días)",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "categoria"),
+            true
+        );
+        $data["usuariosNuevos"] = $usuariosNuevos;
+
+        $datosBD = $this->usuarioModel->obtenerAciertosYErroresDeUsuarios();
+        $usuariosAciertos = $this->graficosModel->generarGraficoDeTorta(
+            "Aciertos y errores",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "nombre"),
+            true
+        );
+        $data["usuariosAciertos"] = $usuariosAciertos;
+        return $data;
+
     }
 
     private function verVariable($data): void
