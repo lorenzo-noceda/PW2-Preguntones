@@ -29,8 +29,8 @@ class JuegoController
 
         $data = $this->model->empezar($usuarioActual["id"], $_SESSION["id_pregunta"] ?? null);
 
-        if (isset($data["error"])) {
-            $this->presenter->show("error", $data);
+        if (isset($data["mensaje"])) {
+            $this->presenter->show("mensajeProcesoCorrecto", $data);
             return;
         }
 
@@ -41,8 +41,7 @@ class JuegoController
 
         // TODO: CAMBIAR A 25/20S
         $musica = $_SESSION['musica'];
-        $tiempoLimite = 10 + $_SESSION["tiempo_inicio"] - time();
-
+        $tiempoLimite = 1200 + $_SESSION["tiempo_inicio"] - time();
 
         $data +=
             ["nombre" => $usuarioActual["nombre"],

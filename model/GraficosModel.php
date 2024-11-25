@@ -16,7 +16,7 @@ class GraficosModel
 
     public function generarGraficoDeTorta(string $titulo, array $datosBD, array $colores, array $etiquetas, bool $porcentaje)
     {
-        $this->graficador->crearGraficoDeTorta(350, 200, $titulo);
+        $this->graficador->crearGraficoDeTorta(400, 200, $titulo);
         $grafico = $this->graficador->asignarDatosGraficoDeTorta($datosBD);
         $this->graficador->asignarColoresGraficoDeTorta($colores, $grafico);
         $this->graficador->asignarTitulosPorDato($etiquetas, $grafico);
@@ -29,9 +29,8 @@ class GraficosModel
         array  $datosBD, array $categoriasX
     )
     {
-        $this->limpiarCarpetaDeAlmacen();
         $this->graficador->crearGraficoDeBarras(
-            350, 200,
+            500, 300,
             $datosBD, $categoriasX, $titulo, $nombreX, $nombreY
         );
         return $this->graficador->getGrafico();

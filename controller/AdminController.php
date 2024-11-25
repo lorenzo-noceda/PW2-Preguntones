@@ -5,7 +5,7 @@ class AdminController
 {
 
     private JuegoModel $juegoModel;
-    private $usuarioModel;
+    private UsuarioModel $usuarioModel;
     private MustachePresenter $presenter;
     private GraficosModel $graficosModel;
 
@@ -30,16 +30,12 @@ class AdminController
         $cantidadDePartidas = $this->juegoModel->getPartidasDelUsuario($usuarioActual["id"]);
         $cantidadDePartidas = empty($cantidadDePartidas) ? 0 : count($cantidadDePartidas);
 
-        // Almacena en la sesión los usuarios de prueba.
-        $_SESSION["usuarios"] = $this->juegoModel->getUsuariosTest();
-
         $data = [
             "texto" => "Hola mundo",
             "todas" => $this->juegoModel->getCantidadPreguntasBD(),
             "correctas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["correctas"]["correctas"],
             "malas" => $this->juegoModel->obtenerRespondidasMalasBuenas($usuarioActual["id"])["incorrectas"]["incorrectas"],
             "partidas" => $cantidadDePartidas,
-            "usuarios" => $_SESSION["usuarios"],
             "partidasJugadas" => $this->juegoModel->getPartidas(),
             "ranking" => $this->juegoModel->getRanking(),
             "jugadoresTotales" => $this->juegoModel->obtenerNumeroDeJugadores(),
@@ -52,47 +48,25 @@ class AdminController
         $this->presenter->show("admin", $data);
     }
 
-    private function getGraficos($tiempo): array {
-        $this->graficosModel->reset();
-        $datosBD = array_column($this->usuarioModel->obtenerUsuariosPorSexo($tiempo), "cantidad");
-        if (empty($datosBD)) {
-            echo "no hay datos";
-            return [];
-        }
-        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTorta(
-            "Usuarios por sexo",
-            $datosBD,
-            ["blue", "red", "yellow"],
-            ["Femenino", "Masculino", "Prefiere no decirlo"],
-            true
-        );
-        $data["userPorSexo"] = $graficoTortaUsuariosSexo;
 
-        $datosBD = $this->usuarioModel->obtenerUsuariosPorEdad($tiempo);
-        if (empty($datosBD)) {
-            echo "no hay datos";
-            return [];
-        }
-        $graficoUsuariosPorEdad = $this->graficosModel->generarGraficoDeTorta(
-            "Usuarios por edad",
-            array_column($datosBD, "cantidad"),
-            ["blue", "red", "yellow"],
-            array_column($datosBD, "grupo_etario"),
-            true
-        );
-        $data["userPorEdad"] = $graficoUsuariosPorEdad;
-        return $data;
-    }
-
+    /**
+     * @throws Exception
+     */
     public function usuariosPorAtributo()
     {
         $tiempo = $_GET["time"] ?? 360;
-        $result = $this->getGraficos($tiempo);
-        $data["userPorSexo"] = $result["userPorSexo"];
-//        $data["userPorPais"] = $result["userPorPais"];
-        $data["userPorEdad"] = $result["userPorEdad"];
-        $data["texto"] = $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
-        $this->presenter->show("adminGraficosUsuariosPorPaisSexoEdad", $data);
+        try {
+            $result = $this->getGraficos($tiempo);
+            $data["userPorSexo"] = $result["userPorSexo"];
+            $data["userPorPais"] = $result["userPorPais"];
+            $data["userPorEdad"] = $result["userPorEdad"];
+            $data["texto"] = $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
+            $this->presenter->show("adminGraficosUsuariosPorPaisSexoEdad", $data);
+        } catch (Exception $ex) {
+            $data["error"] = "¡Ups! No se pudo cargar los graficos.";
+            $this->presenter->show("error", $data);
+        }
+
     }
 
     public function general()
@@ -108,11 +82,22 @@ class AdminController
             array_column($datosBD, "periodo"),
         );
 
+        $datosBD = $this->usuarioModel->obtenerCantidadDePartidasPorTiempo();
+        $this->verVariable($datosBD);
+        $graficoPartidas = $this->graficosModel->generarGraficoDeBarras(
+            "Partidas",
+            "Tiempo",
+            "Jugadas",
+            array_column($datosBD, "cantidad_partidas"),
+            array_column($datosBD, "periodo"),
+        );
+
         $data = [
             "usuarios" => $graficoUsuarios,
+            "partidas" => $graficoPartidas,
             "texto" => $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
         ];
-        $this->presenter->show("graficosGeneral", $data);
+        $this->presenter->show("adminGraficosGeneral", $data);
     }
 
     private function obtenerPorcentajeAciertos($usuario)
@@ -373,6 +358,8 @@ class AdminController
     private function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
+        $usuarioActual = $this->usuarioModel->getUsuarioPorId($usuarioActual["id"]);
+        $this->verVariable($usuarioActual);
 
         if ($usuarioActual === null) {
             $this->redireccionar("login");
@@ -420,6 +407,47 @@ class AdminController
             error_log("Acceso denegado: Usuario actual " . print_r($usuarioActual, true)); // Log para depuración.
             $this->redireccionar("home");
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function getGraficos($tiempo): array
+    {
+        $this->graficosModel->reset();
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorSexo($tiempo);
+        if (empty($datosBD)) throw new Exception("No se pudo obtener los datos.");
+        $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios por sexo",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red", "yellow"],
+            array_column($datosBD, "nombre"),
+            true
+        );
+        $data["userPorSexo"] = $graficoTortaUsuariosSexo;
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorEdad($tiempo);
+        if (empty($datosBD)) throw new Exception("No se pudo obtener los datos.");
+        $graficoUsuariosPorEdad = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios por edad",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red", "yellow"],
+            array_column($datosBD, "grupo_etario"),
+            true
+        );
+        $data["userPorEdad"] = $graficoUsuariosPorEdad;
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosPorPais($tiempo);
+        if (empty($datosBD)) throw new Exception("No se pudo obtener los datos.");
+        $graficoUsuariosPorEdad = $this->graficosModel->generarGraficoDeBarras(
+            "Usuarios por pais",
+            "Paises",
+            "Usuarios",
+            array_column($datosBD, "cantidad"),
+            array_column($datosBD, "pais"),
+        );
+        $data["userPorPais"] = $graficoUsuariosPorEdad;
+        return $data;
     }
 
     private function verVariable($data): void
