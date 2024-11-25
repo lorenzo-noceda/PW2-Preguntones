@@ -551,6 +551,55 @@ SELECT u.*,
         return $result["success"];
     }
 
+    public function obtenerUsuariosNuevosYViejos() {
+        $q = " SELECT 'Usuarios nuevos' AS categoria,
+              COUNT(*) AS cantidad
+              FROM usuario
+              WHERE fecha_registro >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+              UNION ALL
+              SELECT 'Usuarios no nuevos' AS categoria,
+              COUNT(*) AS cantidad
+              FROM usuario
+              WHERE fecha_registro < DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    public function obtenerAciertosYErroresDeUsuarios() {
+        $q = " SELECT 
+                    'Aciertos' AS nombre, 
+                    SUM(cantidad_acertadas) AS cantidad
+                FROM usuario
+                WHERE cantidad_respondidas > 0
+                UNION ALL
+                SELECT 
+                    'Errores' AS nombre, 
+                    SUM(cantidad_respondidas - cantidad_acertadas) AS cantidad
+                FROM usuario
+                WHERE cantidad_respondidas > 0";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    public function obtenerCantidadDePreguntasHabilitadasYNoHabilitadas() {
+        $q = "SELECT e.descripcion as estado,
+              COUNT(*) AS cantidad
+              FROM pregunta p 
+              JOIN estado e ON p.id_estado = e.id
+              GROUP BY e.descripcion";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
     public function obtenerUsuariosPorEdad($tiempo)
     {
         $q = "SELECT 

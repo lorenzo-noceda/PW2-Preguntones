@@ -71,6 +71,7 @@ class AdminController
 
     public function general()
     {
+        $this->graficosModel->reset();
         $tiempo = $_GET["time"] ?? 9999;
 
         $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
@@ -83,7 +84,6 @@ class AdminController
         );
 
         $datosBD = $this->usuarioModel->obtenerCantidadDePartidasPorTiempo();
-        $this->verVariable($datosBD);
         $graficoPartidas = $this->graficosModel->generarGraficoDeBarras(
             "Partidas",
             "Tiempo",
@@ -92,9 +92,40 @@ class AdminController
             array_column($datosBD, "periodo"),
         );
 
+        $datosBD = $this->usuarioModel->obtenerCantidadDePreguntasHabilitadasYNoHabilitadas();
+        $graficoPreguntas = $this->graficosModel->generarGraficoDeTorta(
+            "Preguntas del juego",
+            array_column($datosBD, "cantidad"),
+            ["green", "gray", "orange", "red", "blue"],
+            array_column($datosBD, "estado"),
+            true
+        );
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosNuevosYViejos();
+        $usuariosNuevos = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios nuevos (7 días)",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "categoria"),
+            true
+        );
+
+        $datosBD = $this->usuarioModel->obtenerAciertosYErroresDeUsuarios();
+        $usuariosAciertos = $this->graficosModel->generarGraficoDeTorta(
+            "Aciertos y errores",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "nombre"),
+            true
+        );
+
+
         $data = [
             "usuarios" => $graficoUsuarios,
             "partidas" => $graficoPartidas,
+            "preguntas" => $graficoPreguntas,
+            "usuariosNuevos" => $usuariosNuevos,
+            "usuariosAciertos" => $usuariosAciertos,
             "texto" => $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
         ];
         $this->presenter->show("adminGraficosGeneral", $data);
