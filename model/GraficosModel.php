@@ -1,28 +1,42 @@
 <?php
 
-class GraficosModel {
+class GraficosModel
+{
 
     private Graficador $graficador;
+
     public function __construct($graficador)
     {
         $this->graficador = $graficador;
     }
 
-    public function generarGraficoDeTortaPorSexos($datosBD)
-    {
+    public function reset () {
         $this->limpiarCarpetaDeAlmacen();
-        $this->graficador->crearGraficoDeTorta(350, 200, "Usuarios por Sexo");
-        $grafico = $this->graficador->asignarDatosGraficoDeTorta(
-            [$datosBD[0]["cantidad"],
-                $datosBD[1]["cantidad"],
-                $datosBD[2]["cantidad"]
-            ]);
+    }
 
-        $this->graficador->asignarColoresGraficoDeTorta(["blue", "red", "green"], $grafico);
-        $this->graficador->asignarTitulosPorDato(["Femenino", "Masculino", "Prefiere no decir"], $grafico);
-        $this->graficador->asignarFormatoDeNumeros("P", $grafico);
+    public function generarGraficoDeTorta(string $titulo, array $datosBD, array $colores, array $etiquetas, bool $porcentaje)
+    {
+        $this->graficador->crearGraficoDeTorta(350, 200, $titulo);
+        $grafico = $this->graficador->asignarDatosGraficoDeTorta($datosBD);
+        $this->graficador->asignarColoresGraficoDeTorta($colores, $grafico);
+        $this->graficador->asignarTitulosPorDato($etiquetas, $grafico);
+        $this->graficador->asignarFormatoDeNumeros($porcentaje ? "P" : "", $grafico);
         return $this->graficador->getGrafico();
     }
+
+    public function generarGraficoDeBarras(
+        string $titulo, string $nombreX, string $nombreY,
+        array  $datosBD, array $categoriasX
+    )
+    {
+        $this->limpiarCarpetaDeAlmacen();
+        $this->graficador->crearGraficoDeBarras(
+            350, 200,
+            $datosBD, $categoriasX, $titulo, $nombreX, $nombreY
+        );
+        return $this->graficador->getGrafico();
+    }
+
 
     private function limpiarCarpetaDeAlmacen()
     {

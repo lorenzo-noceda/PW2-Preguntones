@@ -24,7 +24,41 @@ class UsuarioModel
             $usuarioBuscado["partidas"] = $this->getPartidasDelUsuario($idUsuario);
             $usuarioBuscado["puntajeAcumulado"] = $this->getPuntajeAcumuladoDeUnUsuario($idUsuario)["puntaje_acumulado"];
         }
+
+        $paisAndCiudad = $this->obtenerPaisCiudad($usuarioBuscado["latitud"], $usuarioBuscado["longitud"]);
+
+        $usuarioBuscado["pais"] = $paisAndCiudad["pais"];
+        $usuarioBuscado["ciudad"] = $paisAndCiudad["ciudad"];
         return $usuarioBuscado;
+    }
+
+    private function obtenerPaisCiudad($latitud, $longitud)
+    {
+        $apiKey = 'AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc';
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitud,$longitud&key=$apiKey";
+
+        // Realizar la solicitud HTTP
+        $respuesta = file_get_contents($url);
+        $datos = json_decode($respuesta, true);
+
+        $ciudad = null;
+        $pais = null;
+
+        if ($datos['status'] === 'OK') {
+            foreach ($datos['results'][0]['address_components'] as $componente) {
+                if (in_array('locality', $componente['types'])) {
+                    $ciudad = $componente['long_name']; // Nombre de la ciudad
+                }
+                if (in_array('country', $componente['types'])) {
+                    $pais = $componente['long_name']; // Nombre del país
+                }
+            }
+        }
+
+        return [
+            'ciudad' => $ciudad,
+            'pais' => $pais
+        ];
     }
 
 
@@ -48,10 +82,6 @@ class UsuarioModel
 
         return ['success' => false, 'message' => 'Error al registrar el jugador.'];
     }
-
-
-
-
 
 
     public function enviarMailValidacion($emailUsuario, $nombreUsuario)
@@ -112,7 +142,8 @@ class UsuarioModel
 
     // Consultas a la base de datos
 
-    public function getRanking () {
+    public function getRanking()
+    {
         $q = "SELECT 
                     u.username, 
                     u.id AS usuario_id,
@@ -277,20 +308,20 @@ class UsuarioModel
 
     public function getUsuarioPorUsername($username)
     {
-        $query = '
-SELECT u.*, 
-       j.id AS jugador_id, 
-       e.id AS editor_id, 
-       a.id AS administrador_id 
-    FROM usuario u
-    LEFT JOIN jugador j ON u.id = j.id
-    LEFT JOIN editor e ON u.id = e.id
-    LEFT JOIN administrador a ON u.id = a.id
-    WHERE u.username = :username';
+        $query = 'SELECT u.*, 
+                       j.id AS jugador_id, 
+                       e.id AS editor_id, 
+                       a.id AS administrador_id 
+                  FROM usuario u
+                  LEFT JOIN jugador j ON u.id = j.id
+                  LEFT JOIN editor e ON u.id = e.id
+                  LEFT JOIN administrador a ON u.id = a.id
+                  WHERE u.username = :username';
 
         $params = [
             ["columna" => "username", "valor" => $username],
         ];
+
         $result = $this->database->query($query, "SINGLE", $params);
         if ($result["success"]) {
             return $result["data"];
@@ -349,8 +380,9 @@ SELECT u.*,
         return $this->getUsuarioPorCorreo($correo) != null;
     }
 
-    public function subirRespuesta($respuesta){
-        $queryRespuesta="
+    public function subirRespuesta($respuesta)
+    {
+        $queryRespuesta = "
         INSERT INTO respuesta(texto,id_pregunta, esCorrecta)
         values(:texto, :id_pregunta, :esCorrecta)";
 
@@ -362,7 +394,7 @@ SELECT u.*,
         return $this->database->query($queryRespuesta, 'INSERT', $params);
     }
 
-    public function guardarSugerencia($texto, $id_categoria,$respuestas): bool
+    public function guardarSugerencia($texto, $id_categoria, $respuestas): bool
     {
         $query = "
         INSERT INTO pregunta(texto, id_categoria, id_estado)
@@ -376,14 +408,14 @@ SELECT u.*,
 
         $ultimoId = $this->database->getUltimoIdGenerado();
 
-        $queryRespuesta="
+        $queryRespuesta = "
         INSERT INTO respuesta(respuestas,ultimoId, esCorrecta)
         values(:respuestas, :ultimoId, :esCorrecta)";
 
-        $respuesta1=["texto"=>$respuestas["incorrecta1"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
-        $respuesta2=["texto"=>$respuestas["incorrecta2"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
-        $respuesta3=["texto"=>$respuestas["incorrecta3"], "id_pregunta"=>$ultimoId, "esCorrecta"=>0];
-        $respuesta4=["texto"=>$respuestas["correcta"], "id_pregunta"=>$ultimoId, "esCorrecta"=>1];
+        $respuesta1 = ["texto" => $respuestas["incorrecta1"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
+        $respuesta2 = ["texto" => $respuestas["incorrecta2"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
+        $respuesta3 = ["texto" => $respuestas["incorrecta3"], "id_pregunta" => $ultimoId, "esCorrecta" => 0];
+        $respuesta4 = ["texto" => $respuestas["correcta"], "id_pregunta" => $ultimoId, "esCorrecta" => 1];
 
         $this->subirRespuesta($respuesta1);
         $this->subirRespuesta($respuesta2);
@@ -405,7 +437,8 @@ SELECT u.*,
     }
 
 
-    public function esEditor($idUsuario) {
+    public function esEditor($idUsuario)
+    {
         $query = "SELECT COUNT(*) AS total FROM editor WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
@@ -416,7 +449,8 @@ SELECT u.*,
     }
 
 
-    public function esJugador($idUsuario) {
+    public function esJugador($idUsuario)
+    {
         $query = "SELECT COUNT(*) AS total FROM jugador WHERE id = :id";
         $params = [
             ["columna" => "id", "valor" => $idUsuario]
@@ -440,18 +474,72 @@ SELECT u.*,
         return $this->database->query($query, 'UPDATE', $params);
     }
 
-    public function obtenerUsuariosPorSexo () {
+    public function obtenerUsuariosPorSexo($dias = 360)
+    {
         $q = "SELECT COUNT(s.nombre) as cantidad, s.nombre
               FROM USUARIO u JOIN sexo s ON u.id_sexo = s.id
-              GROUP BY s.nombre";
-        $result = $this->database->query($q, "MULTIPLE");
+              WHERE u.fecha_registro >= CURDATE() - INTERVAL :dias DAY
+              GROUP BY s.nombre
+              ORDER BY s.nombre ASC";
+        $params = [
+            ["columna" => "dias", "valor" => $dias]
+        ];
+        $result = $this->database->query($q, "MULTIPLE", $params);
         if ($result["success"]) {
             return $result["data"];
         }
         return $result["success"];
     }
 
-    public function actualizarUsuario($idUsuario, $campos){
+    public function obtenerCantidadDeUsuariosPorTiempo()
+    {
+        $q = "SELECT 
+                CASE 
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 DAY THEN 'Último Día'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 7 DAY THEN 'Última Semana'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 MONTH THEN 'Último Mes'
+                    WHEN fecha_registro >= CURDATE() - INTERVAL 1 YEAR THEN 'Último Año'
+                    ELSE 'Todos los Tiempos'
+                END AS periodo,
+                COUNT(*) AS cantidad_usuarios
+            FROM usuario
+            GROUP BY periodo
+            ORDER BY FIELD(periodo, 'Último Día', 'Última Semana', 'Último Mes', 'Último Año', 'Todos los Tiempos')";
+        $result = $this->database->query($q, "MULTIPLE", []);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    public function obtenerUsuariosPorEdad($tiempo)
+    {
+        $q = "SELECT 
+                    CASE
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) BETWEEN 0 AND 17 THEN 'menor'
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) BETWEEN 18 AND 59 THEN 'medio'
+                        WHEN TIMESTAMPDIFF(YEAR, CONCAT(anio_nacimiento, '-01-01'), CURDATE()) > 60 THEN 'jubilado'
+                    END AS grupo_etario,
+                    COUNT(*) AS cantidad
+                FROM usuario
+                WHERE fecha_registro >= CURDATE() - INTERVAL :dias DAY
+                GROUP BY grupo_etario";
+        $params = [
+            ["columna" => "dias", "valor" => $tiempo]
+        ];
+        $result = $this->database->query($q, "MULTIPLE", $params);
+        if ($result["success"]) {
+            return $result["data"];
+        }
+        return $result["success"];
+    }
+
+    private function obtenerUsuariosPorRangoEtario()
+    {
+
+    }
+
+   public function actualizarUsuario($idUsuario, $campos){
         foreach ($campos as $clave => $valor) {
             $q = "UPDATE usuario SET $clave = :valor WHERE id = :id";
             var_dump($q);
@@ -465,14 +553,13 @@ SELECT u.*,
     }
 
     public function actualizarMusica($idUsuario, $activarMusica){
-
         $q = "UPDATE usuario
               SET musica = :musica 
               WHERE id = :id";
 
         $params = [
             ["columna" => "musica", "valor" => $activarMusica],
-             ["columna" => "id" , "valor" => $idUsuario]
+            ["columna" => "id", "valor" => $idUsuario]
         ];
         return $this->database->query($q, 'UPDATE', $params);
     }

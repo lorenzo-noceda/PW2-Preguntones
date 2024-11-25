@@ -1,8 +1,11 @@
 <?php
 
 use JetBrains\PhpStorm\NoReturn;
-class LoginController {
-    private $usuarioModelo;
+
+class LoginController
+{
+
+    private UsuarioModel $usuarioModelo;
     private $presenter;
 
     public function __construct($usuarioModelo, $presenter)

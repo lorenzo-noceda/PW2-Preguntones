@@ -303,6 +303,9 @@ WHERE j.verificado IS NOT NULL;
 
 ALTER TABLE jugador DROP COLUMN verificado;
 
+-- musica juego
+ALTER TABLE usuario ADD musica BOOLEAN DEFAULT FALSE;
+
 
 
 
