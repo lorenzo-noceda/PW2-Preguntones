@@ -66,7 +66,6 @@ class JuegoModel
     {
         // Anti f5 y para que no responda lo que no le dí
         if ($idPregunta) {
-            $this->verVariable("No recargues, y no te salgas. La pregunta será la misma bobo.");
             $data["pregunta"] = $this->obtenerPreguntaAprobadaPorId($idPregunta);
         } else {
             // Si empieza
@@ -293,7 +292,7 @@ class JuegoModel
     }
 
     // Métodos para desarrollo
-    
+
     public function resetPartidasDelUsuario($idUsuario)
     {
         $q = "DELETE FROM partida

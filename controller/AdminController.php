@@ -359,7 +359,6 @@ class AdminController
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
         $usuarioActual = $this->usuarioModel->getUsuarioPorId($usuarioActual["id"]);
-        $this->verVariable($usuarioActual);
 
         if ($usuarioActual === null) {
             $this->redireccionar("login");
