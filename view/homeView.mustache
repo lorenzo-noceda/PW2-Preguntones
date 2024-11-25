@@ -43,9 +43,11 @@
     <div class="d-flex gap-2 flex-column mx-auto align-items-center text-white">
         <h1>¡Bienvenido {{nombre}}!</h1>
         <div class="col-12 d-flex flex-column gap-2">
+            {{#esJugador}}
             <a href="/PW2-Preguntones/juego/empezar" class="btn btn-success fs-5">
                 Jugar
             </a>
+            {{/esJugador}}
             <a href="/PW2-Preguntones/home/ranking" class="btn btn-secondary">
                 Ranking
             </a>

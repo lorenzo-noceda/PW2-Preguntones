@@ -327,58 +327,146 @@ class AdminController
 
     public function generarPDF(): void
     {
-        // Validar que el usuario es administrador.
+        ob_start(); // Inicia el buffer de salida
+
+        // Validar que el usuario sea administrador
         $this->validarAdministrador();
 
-        // Obtener datos dinámicos, como las partidas jugadas o ranking.
-        $partidasJugadas = $this->juegoModel->getPartidas();
-        $ranking = $this->juegoModel->getRanking();
+        // Obtener gráficos
+        try {
+            $tiempo = 30; // Ejemplo: Últimos 30 días
+            $graficos = $this->getGraficos($tiempo);
+        } catch (Exception $e) {
+            die('Error al generar gráficos: ' . $e->getMessage());
+        }
 
-        // Generar gráfico de usuarios por sexo
-        $datosPorSexo = $this->usuarioModel->obtenerUsuariosPorSexo(); // Debes implementar este método para obtener los datos
-        $graficosModel = new GraficosModel(new Graficador());
-        $rutaGraficoSexo = $graficosModel->generarGraficoDeTortaPorSexos($datosPorSexo);
-
-        // Inicializar FPDF
-        $pdf = new FPDF;
+        // Crear instancia del PDF
+        $pdf = new FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);
-
-        // Título del PDF
-        $pdf->Cell(0, 10, 'Reporte de Administración', 0, 1, 'C');
+        $pdf->Cell(0, 10, 'Reporte: Usuarios por Atributo', 0, 1, 'C');
         $pdf->Ln(10);
 
-        // Agregar tabla de Partidas Jugadas
+        // Usuarios por Sexo
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(0, 10, 'Partidas Jugadas', 0, 1);
-        $pdf->SetFont('Arial', '', 10);
-        foreach ($partidasJugadas as $partida) {
-            $pdf->Cell(50, 10, "ID Partida: " . $partida['id'], 1);
-            $pdf->Cell(50, 10, "ID Usuario: " . $partida['jugador_id'], 1);
-            $pdf->Cell(50, 10, "Puntaje: " . $partida['puntaje'], 1);
-            $pdf->Ln();
-        }
+        $pdf->Cell(0, 10, 'Usuarios por Sexo', 0, 1);
+        $pdf->Image($graficos['userPorSexo'], 10, $pdf->GetY(), 100); // Ajustar posición y tamaño
+        $pdf->Ln(60);
+
+        // Usuarios por Edad
+        $pdf->Cell(0, 10, 'Usuarios por Edad', 0, 1);
+        $pdf->Image($graficos['userPorEdad'], 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Usuarios por País
+        $pdf->Cell(0, 10, 'Usuarios por Pais', 0, 1);
+        $pdf->Image($graficos['userPorPais'], 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Limpiar el buffer y generar el PDF
+        ob_end_clean(); // Limpia el buffer de salida
+        $pdf->Output('I', 'Reporte_Usuarios.pdf');
+    }
+
+
+    public function generarPDFgeneral(): void
+    {
+        // Validar que el usuario sea administrador
+        $this->validarAdministrador();
+
+        // Resetear el modelo de gráficos y obtener el tiempo
+        $this->graficosModel->reset();
+        $tiempo = $_GET["time"] ?? 9999;
+
+        // Generar gráficos
+        $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
+        $graficoUsuarios = $this->graficosModel->generarGraficoDeBarras(
+            "Usuarios",
+            "Tiempo",
+            "Registrados",
+            array_column($datosBD, "cantidad_usuarios"),
+            array_column($datosBD, "periodo"),
+        );
+
+        $datosBD = $this->usuarioModel->obtenerCantidadDePartidasPorTiempo();
+        $graficoPartidas = $this->graficosModel->generarGraficoDeBarras(
+            "Partidas",
+            "Tiempo",
+            "Jugadas",
+            array_column($datosBD, "cantidad_partidas"),
+            array_column($datosBD, "periodo"),
+        );
+
+        $datosBD = $this->usuarioModel->obtenerCantidadDePreguntasHabilitadasYNoHabilitadas();
+        $graficoPreguntas = $this->graficosModel->generarGraficoDeTorta(
+            "Preguntas del juego",
+            array_column($datosBD, "cantidad"),
+            ["green", "gray", "orange", "red", "blue"],
+            array_column($datosBD, "estado"),
+            true
+        );
+
+        $datosBD = $this->usuarioModel->obtenerUsuariosNuevosYViejos();
+        $usuariosNuevos = $this->graficosModel->generarGraficoDeTorta(
+            "Usuarios nuevos (7 días)",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "categoria"),
+            true
+        );
+
+        $datosBD = $this->usuarioModel->obtenerAciertosYErroresDeUsuarios();
+        $usuariosAciertos = $this->graficosModel->generarGraficoDeTorta(
+            "Aciertos y errores",
+            array_column($datosBD, "cantidad"),
+            ["blue", "red"],
+            array_column($datosBD, "nombre"),
+            true
+        );
+
+        // Crear instancia del PDF
+        $pdf = new FPDF();
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 16);
+        $pdf->Cell(0, 10, 'Reporte General de Estadisticas', 0, 1, 'C');
         $pdf->Ln(10);
 
-        // Agregar tabla de Ranking
-        $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(0, 10, 'Ranking', 0, 1);
-        $pdf->SetFont('Arial', '', 10);
-        foreach ($ranking as $rank) {
-            $pdf->Cell(50, 10, "Usuario: " . $rank['username'], 1);
-            $pdf->Cell(50, 10, "Puntaje Máximo: " . $rank['puntaje_maximo'], 1);
-            $pdf->Ln();
-        }
+        // Texto descriptivo
+        $texto = $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
+        $pdf->SetFont('Arial', '', 12);
+        $pdf->MultiCell(0, 10, $texto);
         $pdf->Ln(10);
 
-        // Agregar gráfico de usuarios por sexo
+        // Añadir gráficos al PDF
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->Cell(0, 10, 'Gráfico de Usuarios por Sexo', 0, 1);
-        $pdf->Image($rutaGraficoSexo, 10, $pdf->GetY(), 100); // Ajusta la posición y tamaño de la imagen
-        $pdf->Ln(50);
 
-        // Salida del PDF al navegador
-        $pdf->Output('I', 'Reporte_Admin.pdf');
+        // Usuarios por tiempo
+        $pdf->Cell(0, 10, 'Usuarios Registrados por Tiempo', 0, 1);
+        $pdf->Image($graficoUsuarios, 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Partidas por tiempo
+        $pdf->Cell(0, 10, 'Partidas Jugadas por Tiempo', 0, 1);
+        $pdf->Image($graficoPartidas, 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Preguntas habilitadas y no habilitadas
+        $pdf->Cell(0, 10, 'Preguntas del Juego', 0, 1);
+        $pdf->Image($graficoPreguntas, 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Usuarios nuevos y viejos
+        $pdf->Cell(0, 10, 'Usuarios Nuevos y Viejos', 0, 1);
+        $pdf->Image($usuariosNuevos, 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Aciertos y errores
+        $pdf->Cell(0, 10, 'Aciertos y Errores', 0, 1);
+        $pdf->Image($usuariosAciertos, 10, $pdf->GetY(), 100);
+        $pdf->Ln(60);
+
+        // Generar y descargar el PDF
+        $pdf->Output('I', 'Reporte_General.pdf');
     }
 
 
