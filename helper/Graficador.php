@@ -26,12 +26,14 @@ class Graficador
         array $datosY, array $categoriasX, string $titulo, string $nombresX, string $nombresY
     ) {
         $this->grafico = new Graph($ancho, $alto); // Lienzo
-        $barras = new BarPlot($datosY); // grafico
         $this->grafico->SetScale("textlin"); // escala
         $this->grafico->xaxis->SetTickLabels($categoriasX); // nombres en X
         $this->grafico->xaxis->title->Set($nombresX);
         $this->grafico->yaxis->title->Set($nombresY);
-        $barras->value->show();
+        $barras = new BarPlot($datosY); // grafico;
+        $barras->value->Show(); // Muestra los valores
+        $barras->value->SetFormat('%d'); // Formato de número entero
+        $barras->value->SetColor('black'); // Color del texto
         $this->grafico->Add($barras); // añadir grafico al lienzo
         $this->grafico->title->Set($titulo); // titulo del grafico
     }
