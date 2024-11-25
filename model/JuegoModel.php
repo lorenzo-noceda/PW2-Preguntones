@@ -163,7 +163,6 @@ class JuegoModel
 
     private function getPreguntaRandom($idUsuario)
     {
-        $this->verVariable("Obteniendo pregunta random");
         // Obtener preguntas no respondidas en el nivel del jugador
         $result = $this->obtenerPreguntasNoRespondidasDelUsuarioPorNivel($idUsuario);
         if (empty($result)) {
