@@ -52,13 +52,12 @@ class AdminController
         $this->presenter->show("admin", $data);
     }
 
-    public function usuariosPorSexo () {
-        $tiempo = $_GET["time"] ?? 360;
+    private function getGraficos($tiempo): array {
+        $this->graficosModel->reset();
         $datosBD = array_column($this->usuarioModel->obtenerUsuariosPorSexo($tiempo), "cantidad");
-
         if (empty($datosBD)) {
             echo "no hay datos";
-            return;
+            return [];
         }
         $graficoTortaUsuariosSexo = $this->graficosModel->generarGraficoDeTorta(
             "Usuarios por sexo",
@@ -67,21 +66,13 @@ class AdminController
             ["Femenino", "Masculino", "Prefiere no decirlo"],
             true
         );
-
-        $data = [
-            "usuariosPorSexoGrafico" => $graficoTortaUsuariosSexo,
-            "texto" => $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
-
-        ];
-        $this->presenter->show("adminGraficosUsuariosPorSexo", $data);
-    }
-
-    public function usuariosPorEdad () {
-        $tiempo = $_GET["time"] ?? 9999;
-        $this->verVariable("tiempo $tiempo");
+        $data["userPorSexo"] = $graficoTortaUsuariosSexo;
 
         $datosBD = $this->usuarioModel->obtenerUsuariosPorEdad($tiempo);
-
+        if (empty($datosBD)) {
+            echo "no hay datos";
+            return [];
+        }
         $graficoUsuariosPorEdad = $this->graficosModel->generarGraficoDeTorta(
             "Usuarios por edad",
             array_column($datosBD, "cantidad"),
@@ -89,22 +80,39 @@ class AdminController
             array_column($datosBD, "grupo_etario"),
             true
         );
+        $data["userPorEdad"] = $graficoUsuariosPorEdad;
+        return $data;
+    }
+
+    public function usuariosPorAtributo()
+    {
+        $tiempo = $_GET["time"] ?? 360;
+        $result = $this->getGraficos($tiempo);
+        $data["userPorSexo"] = $result["userPorSexo"];
+//        $data["userPorPais"] = $result["userPorPais"];
+        $data["userPorEdad"] = $result["userPorEdad"];
+        $data["texto"] = $tiempo == 99999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días.";
+        $this->presenter->show("adminGraficosUsuariosPorPaisSexoEdad", $data);
+    }
+
+    public function general()
+    {
+        $tiempo = $_GET["time"] ?? 9999;
 
         $datosBD = $this->usuarioModel->obtenerCantidadDeUsuariosPorTiempo();
-        $this->verVariable($datosBD);
         $graficoUsuarios = $this->graficosModel->generarGraficoDeBarras(
             "Usuarios",
+            "Tiempo",
+            "Registrados",
             array_column($datosBD, "cantidad_usuarios"),
-            "Usuarios XD",
             array_column($datosBD, "periodo"),
         );
 
         $data = [
-            "usuariosPorEdad" => $graficoUsuariosPorEdad,
             "usuarios" => $graficoUsuarios,
             "texto" => $tiempo == 9999 ? "De todos los tiempos" : "Visualizando últimos $tiempo días."
         ];
-        $this->presenter->show("adminGraficosUsuariosPorEdad", $data);
+        $this->presenter->show("graficosGeneral", $data);
     }
 
     private function obtenerPorcentajeAciertos($usuario)
@@ -358,17 +366,16 @@ class AdminController
     }
 
 
-
     /**
      * Valida que haya un usuario en sesión, *LoginController* se encarga de realizar el guardado en sesión.
      * @return mixed|null Retorna <code>usuario</code> si esta en sesión sino redirección hacia _login_.
      */
-  private function validarUsuario(): mixed
+    private function validarUsuario(): mixed
     {
         $usuarioActual = $_SESSION["usuario"] ?? null;
 
         if ($usuarioActual === null) {
-            $this->redireccionar("login"); 
+            $this->redireccionar("login");
             exit();
         }
 
@@ -402,7 +409,6 @@ class AdminController
         header("Location: /PW2-preguntones/$ruta");
         exit();
     }
-
 
 
     private function validarAdministrador(): void

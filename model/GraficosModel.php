@@ -10,9 +10,12 @@ class GraficosModel
         $this->graficador = $graficador;
     }
 
+    public function reset () {
+        $this->limpiarCarpetaDeAlmacen();
+    }
+
     public function generarGraficoDeTorta(string $titulo, array $datosBD, array $colores, array $etiquetas, bool $porcentaje)
     {
-        $this->limpiarCarpetaDeAlmacen();
         $this->graficador->crearGraficoDeTorta(350, 200, $titulo);
         $grafico = $this->graficador->asignarDatosGraficoDeTorta($datosBD);
         $this->graficador->asignarColoresGraficoDeTorta($colores, $grafico);
@@ -21,14 +24,18 @@ class GraficosModel
         return $this->graficador->getGrafico();
     }
 
-    public function generarGraficoDeBarras(string $titulo, array $datosBD, string $leyenda, array $categoriasX)
+    public function generarGraficoDeBarras(
+        string $titulo, string $nombreX, string $nombreY,
+        array  $datosBD, array $categoriasX
+    )
     {
         $this->limpiarCarpetaDeAlmacen();
-        $this->graficador->crearGraficoDeBarras(350,200,$datosBD,$titulo,$leyenda);
-//        $this->graficador->asignarCategoriasX($categoriasX);
+        $this->graficador->crearGraficoDeBarras(
+            350, 200,
+            $datosBD, $categoriasX, $titulo, $nombreX, $nombreY
+        );
         return $this->graficador->getGrafico();
     }
-
 
 
     private function limpiarCarpetaDeAlmacen()

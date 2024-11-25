@@ -24,7 +24,41 @@ class UsuarioModel
             $usuarioBuscado["partidas"] = $this->getPartidasDelUsuario($idUsuario);
             $usuarioBuscado["puntajeAcumulado"] = $this->getPuntajeAcumuladoDeUnUsuario($idUsuario)["puntaje_acumulado"];
         }
+
+        $paisAndCiudad = $this->obtenerPaisCiudad($usuarioBuscado["latitud"], $usuarioBuscado["longitud"]);
+
+        $usuarioBuscado["pais"] = $paisAndCiudad["pais"];
+        $usuarioBuscado["ciudad"] = $paisAndCiudad["ciudad"];
         return $usuarioBuscado;
+    }
+
+    private function obtenerPaisCiudad($latitud, $longitud)
+    {
+        $apiKey = 'AIzaSyDEM6PvxLZnVui_zkLYB9TqWDSzec3G2Uc';
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitud,$longitud&key=$apiKey";
+
+        // Realizar la solicitud HTTP
+        $respuesta = file_get_contents($url);
+        $datos = json_decode($respuesta, true);
+
+        $ciudad = null;
+        $pais = null;
+
+        if ($datos['status'] === 'OK') {
+            foreach ($datos['results'][0]['address_components'] as $componente) {
+                if (in_array('locality', $componente['types'])) {
+                    $ciudad = $componente['long_name']; // Nombre de la ciudad
+                }
+                if (in_array('country', $componente['types'])) {
+                    $pais = $componente['long_name']; // Nombre del país
+                }
+            }
+        }
+
+        return [
+            'ciudad' => $ciudad,
+            'pais' => $pais
+        ];
     }
 
 

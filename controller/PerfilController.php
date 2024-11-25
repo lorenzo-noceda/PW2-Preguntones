@@ -3,8 +3,8 @@
 class PerfilController
 {
 
-    private $usuarioModel;
-    private $presenter;
+    private UsuarioModel $usuarioModel;
+    private MustachePresenter $presenter;
 
     public function __construct($usuarioModel, $presenter)
     {
@@ -20,7 +20,8 @@ class PerfilController
         $this->presenter->show("perfil", $data);
     }
 
-    public function verPerfilUsuario () {
+    public function verPerfilUsuario()
+    {
         $this->validarUsuario();
         $id = $_GET["id"] ?? null;
         $data["usuario"] = $this->usuarioModel->buscarUsuarioPorId($_SESSION["usuario"]["id"], true);
@@ -38,7 +39,8 @@ class PerfilController
         $this->presenter->show("editarPerfil", $data);
     }
 
-    public function actualizar() {
+    public function actualizar()
+    {
         echo "<h1>En desarrollo</h1>";
     }
 
@@ -54,15 +56,12 @@ class PerfilController
     {
         $this->validarUsuario();
         $id = $_GET["id"] ?? null;
-        if(isset($_POST["musica"])){
-            $activarMusica= $_POST["musica"]==="true" ? 1 : 0;
+        if (isset($_POST["musica"])) {
+            $activarMusica = $_POST["musica"] === "true" ? 1 : 0;
             $this->usuarioModel->actualizarMusica($id, $activarMusica);
-            $_SESSION["musica"]=$activarMusica;
+            $_SESSION["musica"] = $activarMusica;
         }
-
-
-        $this->redireccionar("perfil?id=".$id);
-
+        $this->redireccionar("perfil?id=" . $id);
     }
 
     // Helpers de clase

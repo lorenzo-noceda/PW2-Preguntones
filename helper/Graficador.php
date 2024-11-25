@@ -21,20 +21,20 @@ class Graficador
         $this->grafico->SetBox();
     }
 
-    public function crearGraficoDeBarras($ancho = 350, $alto = 200, array $datosY, string $titulo, string $leyenda) {
-        $this->grafico = new Graph($ancho, $alto);
-        $barras = new BarPlot($datosY);
-        $this->grafico->Add($barras);
-        $this->grafico->xaxis->SetTickLabels(["XD", "XD"]);
-        $this->grafico->title->Set($titulo);
+    public function crearGraficoDeBarras(
+        $ancho = 350, $alto = 200,
+        array $datosY, array $categoriasX, string $titulo, string $nombresX, string $nombresY
+    ) {
+        $this->grafico = new Graph($ancho, $alto); // Lienzo
+        $barras = new BarPlot($datosY); // grafico
+        $this->grafico->SetScale("textlin"); // escala
+        $this->grafico->xaxis->SetTickLabels($categoriasX); // nombres en X
+        $this->grafico->xaxis->title->Set($nombresX);
+        $this->grafico->yaxis->title->Set($nombresY);
+        $barras->value->show();
+        $this->grafico->Add($barras); // añadir grafico al lienzo
+        $this->grafico->title->Set($titulo); // titulo del grafico
     }
-
-    public function asignarCategoriasX (array $categorias) {
-        $this->verVariable($categorias);
-        $this->grafico->xaxis->SetTickLabels($categorias);
-    }
-
-
 
     public function asignarDatosGraficoDeTorta($arrayDatos) {
         $torta = new PiePlot($arrayDatos);
